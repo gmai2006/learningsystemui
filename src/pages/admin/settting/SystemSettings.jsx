@@ -9,58 +9,115 @@ import apiClient from '../../../api/ApiClient';
 import AuditLogTable from './AuditLogPage';
 import AcademicConfig from './AcademicConfig';
 
+/**
+ * Formats Jakarta JSON array timestamps [YYYY, MM, DD, HH, mm, ss, ns] 
+ * into a human-readable string.
+ */
+const formatTimestamp = (tsArray) => {
+    if (!Array.isArray(tsArray)) return "N/A";
+    const [year, month, day, hour, min] = tsArray;
+    return `${month}/${day}/${year} ${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+};
+
 const SystemSettings = () => {
     const [activeTab, setActiveTab] = useState('academic');
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(false);
     const { showNotification } = useNotification();
-// 1. Added state for filtering
+    // 1. Added state for filtering
     const [selectedAction, setSelectedAction] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
 
+    // Initial state is now empty or skeleton
     const [config, setConfig] = useState({
-        currentSemester: 'Spring 2026',
-        jobApprovalRequired: true,
-        fwsCheckEnabled: true,
-        deadlineDate: '2026-05-15'
+        CURRENT_SEMESTER: '',
+        JOB_APPROVAL_REQUIRED: false,
+        FWS_CHECK_ENABLED: false,
+        EXPERIENCE_DEADLINE: ''
     });
 
-    /**
-     * Formats Jakarta JSON array timestamps [YYYY, MM, DD, HH, mm, ss, ns] 
-     * into a human-readable string.
-     */
-    const formatTimestamp = (tsArray) => {
-        if (!Array.isArray(tsArray)) return "N/A";
-        const [year, month, day, hour, min] = tsArray;
-        return `${month}/${day}/${year} ${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-    };
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalLogs, setTotalLogs] = useState(0);
+    const pageSize = 25;
 
-    const fetchLogs = async () => {
-        setLoading(true);
+    const fetchConfig = async () => {
         try {
-            // Append the action filter to the query string
-            const url = `/admin/audit-logs?limit=50&offset=0${selectedAction ? `&action=${selectedAction}` : ''}`;
-            const response = await apiClient.get(url);
-            setLogs(response.data);
+            const response = await apiClient.get('/admin/config');
+            const data = response.data; // Expected: [{key: '...', value: '...'}, ...]
+
+            // Transform the array of objects into a single flat object for the UI
+            const newConfig = {};
+            data.forEach(item => {
+                // Handle boolean conversion for toggles
+                if (item.key === 'JOB_APPROVAL_REQUIRED' || item.key === 'FWS_CHECK_ENABLED') {
+                    newConfig[item.key] = item.value === 'true';
+                } else {
+                    newConfig[item.key] = item.value;
+                }
+            });
+
+            setConfig(prev => ({ ...prev, ...newConfig }));
         } catch (err) {
-            showNotification("Could not load filtered logs.", "error");
-        } finally {
-            setLoading(false);
+            showNotification("Failed to load system configurations.", "error");
         }
     };
 
-    useEffect(() => {
-        if (activeTab === 'logs') fetchLogs();
-    }, [activeTab]);
-
-    const handleSave = async () => {
+    /**
+     * API: Save updated configs
+     */
+    const handleSaveConfig = async () => {
         try {
-            // Corrected from 'api' to 'apiClient' to match your import
-            await apiClient.put('/admin/config', { settings: config });
-            showNotification("Global settings updated and logged.", "success");
+            // Transform local state back into the format the backend expects
+            const payload = {
+                settings: {
+                    CURRENT_SEMESTER: config.CURRENT_SEMESTER,
+                    JOB_APPROVAL_REQUIRED: String(config.JOB_APPROVAL_REQUIRED),
+                    FWS_CHECK_ENABLED: String(config.FWS_CHECK_ENABLED),
+                    EXPERIENCE_DEADLINE: config.EXPERIENCE_DEADLINE
+                }
+            };
+            
+            await apiClient.put('/admin/config', payload);
+            showNotification("System configurations synchronized successfully.", "success");
         } catch (err) {
-            const errorMsg = err.response?.data || "Failed to update silos.";
-            showNotification(errorMsg, "error");
+            showNotification("Error saving settings.", "error");
+        }
+    };
+
+    /**
+     * Step 1: Handle Search Debouncing
+     * Effect runs every time searchTerm changes, but sets a timeout
+     */
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500); // 500ms delay
+
+        return () => clearTimeout(timer); // Cleanup: cancel timer if user types again
+    }, [searchTerm]);
+    
+    /**
+     * Step 2: Update fetchLogs to include the search query
+     */
+    const fetchLogs = async () => {
+        setLoading(true);
+        try {
+            const params = {
+                limit: pageSize,
+                offset: (currentPage - 1) * pageSize,
+                ...(selectedAction && { action: selectedAction }),
+                ...(debouncedSearch && { actor: debouncedSearch }) // Add search param
+            };
+            
+            const response = await apiClient.get('/admin/audit-logs', { params });
+            setLogs(response.data);
+            setTotalLogs(parseInt(response.headers['x-total-count'] || 0));
+        } catch (err) {
+            showNotification("Search failed.", "error");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -69,7 +126,7 @@ const SystemSettings = () => {
             const response = await apiClient.get('/admin/audit-logs/export', {
                 responseType: 'blob', // Important for file downloads
             });
-            
+
             // Create a link to download the blob
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
@@ -78,12 +135,45 @@ const SystemSettings = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
-            
+
             showNotification("CSV Export started.", "success");
         } catch (err) {
             showNotification("Export failed.", "error");
         }
     };
+
+    /**
+     * Logic: Reset all filtering parameters to their default state.
+     * This will trigger the useEffect because searchTerm and selectedAction change.
+     */
+    const handleReset = () => {
+        setSearchTerm("");
+        setSelectedAction("");
+        setCurrentPage(1);
+        showNotification("Filters cleared.", "info");
+    };
+
+    useEffect(() => {
+        fetchConfig();
+    }, []);
+
+    // Reset to page 1 if filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedAction]);
+
+    /**
+     * Step 3: Trigger fetch when debounced search or other filters change
+     */
+    useEffect(() => {
+        if (activeTab === 'logs') {
+            // Reset to page 1 whenever search or filter changes
+            setCurrentPage(1); 
+            fetchLogs();
+        }
+    }, [activeTab, selectedAction, debouncedSearch, currentPage]);
+
+    
 
     return (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -104,16 +194,26 @@ const SystemSettings = () => {
 
             <div className="p-8">
                 {activeTab === 'academic' ? (
-                    <AcademicConfig config={config} setConfig={setConfig} onSave={handleSave} />
+                    <AcademicConfig 
+                    config={config} 
+                    setConfig={setConfig} 
+                    onSave={handleSaveConfig} />
                 ) : (
-                    <AuditLogTable 
-                    logs={logs} 
-                        loading={loading} 
+                    <AuditLogTable
+                        logs={logs}
+                        loading={loading}
                         formatTimestamp={formatTimestamp}
                         selectedAction={selectedAction}
                         onFilterChange={setSelectedAction}
                         onExport={handleExport}
-                        isExporting={exporting} />
+                        isExporting={exporting}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        totalLogs={totalLogs}
+                        pageSize={pageSize} 
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm} 
+                        onReset={handleReset} />
                 )}
             </div>
         </div>

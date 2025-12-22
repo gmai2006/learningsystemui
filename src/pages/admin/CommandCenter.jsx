@@ -1,30 +1,36 @@
-import React from 'react';
-// import { apiClient } from '../../api/ApiClient';
+import React, { useEffect, useState } from 'react';
+import apiClient from '../../api/ApiClient';
 import {
   Users, Briefcase, GraduationCap, CheckCircle,
   AlertTriangle, ArrowUpRight, Clock, ShieldCheck
 } from 'lucide-react';
 
 const CommandCenter = ({ user }) => {
-  // Mock data representing real-time system state
-  const kpis = [
-    { label: 'Total Active Students', value: '8,420', change: '+12%', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Pending Job Approvals', value: '24', change: 'Action Required', icon: Briefcase, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Unverified Experiences', value: '156', change: 'High Volume', icon: GraduationCap, color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'Employer Partners', value: '112', change: '+4 this week', icon: ShieldCheck, color: 'text-green-600', bg: 'bg-green-50' },
-  ];
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState([]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/admin/dashboard/stats');
-      setStats(response.data); // Axios automatically parses JSON
+      const response = await apiClient.get('/admin/dashboard/stats');
+      const data = response.data;
+      const kpis = [
+        { key: 'activeStudents', label: 'Total Active Students', value: data.activeStudents, change: '+12%', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { key: 'pendingJobApprovals', label: 'Pending Job Approvals', value: data.pendingJobApprovals, change: 'Action Required', icon: Briefcase, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { key: 'unverifiedExperiences', label: 'Unverified Experiences', value: data.unverifiedExperiences, change: 'High Volume', icon: GraduationCap, color: 'text-red-600', bg: 'bg-red-50' },
+        { key: 'employerPartners', label: 'Employer Partners', value: data.employerPartners, change: `+${data.newEmployerPartners} this week`, icon: ShieldCheck, color: 'text-green-600', bg: 'bg-green-50' },
+      ];
+      setStats(kpis); // Axios automatically parses JSON
     } catch (err) {
       console.error("Failed to fetch Command Center stats", err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -36,7 +42,7 @@ const CommandCenter = ({ user }) => {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi, idx) => (
+        {stats.map((kpi, idx) => (
           <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <div className={`p-3 rounded-xl ${kpi.bg} ${kpi.color}`}>

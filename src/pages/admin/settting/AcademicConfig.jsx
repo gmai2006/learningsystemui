@@ -23,28 +23,28 @@ const AcademicConfig = ({ config, setConfig, onSave }) => (
     <div className="max-w-3xl space-y-8">
         <section>
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Calendar className="text-gray-400" size={20} /> Academic Period Settings
+                <Calendar className="text-gray-400" size={20} /> Academic Period
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Current Semester</label>
                     <select
-                        value={config.currentSemester}
-                        onChange={(e) => setConfig({...config, currentSemester: e.target.value})}
-                        className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                        value={config.CURRENT_SEMESTER}
+                        onChange={(e) => setConfig({...config, CURRENT_SEMESTER: e.target.value})}
+                        className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#A10022] outline-none"
                     >
-                        <option>Winter 2026</option>
-                        <option>Spring 2026</option>
-                        <option>Summer 2026</option>
+                        <option value="Winter 2026">Winter 2026</option>
+                        <option value="Spring 2026">Spring 2026</option>
+                        <option value="Summer 2026">Summer 2026</option>
                     </select>
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Global Experience Deadline</label>
                     <input 
                         type="date" 
-                        value={config.deadlineDate} 
-                        onChange={(e) => setConfig({...config, deadlineDate: e.target.value})}
-                        className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" 
+                        value={config.EXPERIENCE_DEADLINE} 
+                        onChange={(e) => setConfig({...config, EXPERIENCE_DEADLINE: e.target.value})}
+                        className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#A10022]" 
                     />
                 </div>
             </div>
@@ -52,20 +52,20 @@ const AcademicConfig = ({ config, setConfig, onSave }) => (
 
         <section className="pt-6 border-t">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Shield className="text-gray-400" size={20} /> Recruitment Guardrails
+                <Shield className="text-gray-400" size={20} /> Guardrails
             </h3>
             <div className="space-y-4">
                 <ToggleItem
                     label="Require Staff Approval for External Jobs"
                     desc="All non-EWU job postings must be manually reviewed."
-                    checked={config.jobApprovalRequired}
-                    onChange={() => setConfig({...config, jobApprovalRequired: !config.jobApprovalRequired})}
+                    checked={config.JOB_APPROVAL_REQUIRED}
+                    onChange={() => setConfig({...config, JOB_APPROVAL_REQUIRED: !config.JOB_APPROVAL_REQUIRED})}
                 />
                 <ToggleItem
                     label="Automated FWS Eligibility Check"
-                    desc="Validate student work-study status against Banner data in real-time."
-                    checked={config.fwsCheckEnabled}
-                    onChange={() => setConfig({...config, fwsCheckEnabled: !config.fwsCheckEnabled})}
+                    desc="Validate student work-study status against Banner data."
+                    checked={config.FWS_CHECK_ENABLED}
+                    onChange={() => setConfig({...config, FWS_CHECK_ENABLED: !config.FWS_CHECK_ENABLED})}
                 />
             </div>
         </section>
@@ -73,9 +73,9 @@ const AcademicConfig = ({ config, setConfig, onSave }) => (
         <div className="pt-8">
             <button 
                 onClick={onSave}
-                className="bg-[#A10022] text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-800 shadow-lg shadow-red-900/20 transition-all active:scale-95"
+                className="bg-[#A10022] text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-800 transition-all active:scale-95"
             >
-                <Save size={18} /> Save Global Settings
+                <Save size={18} /> Save All Settings
             </button>
         </div>
     </div>

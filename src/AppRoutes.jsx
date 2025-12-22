@@ -5,6 +5,7 @@ import CommandCenter from './pages/admin/CommandCenter';
 import UserManagement from './pages/admin/user/UserManagement';
 import StaffJobOversight from './pages/admin/staff/StaffJobOversight';
 import SystemSettings from './pages/admin/settting/SystemSettings';
+import AppliedLearningDashboard from './pages/admin/learning/AppliedLearningDashboard';
 
 // ... other imports
 
@@ -24,6 +25,7 @@ const AppRoutes = ({ appUser, token }) => {
           <Route path="overview" element={<CommandCenter user={appUser} token={token} />} />
           <Route path="users" element={<UserManagement user={appUser} token={token} />} />
           <Route path="jobs" element={<StaffJobOversight user={appUser} token={token} />} />
+          <Route path="learning" element={<AppliedLearningDashboard user={appUser} token={token} />} />
           <Route path="settings" element={<SystemSettings user={appUser} token={token} />} />
         </Route>
       )}

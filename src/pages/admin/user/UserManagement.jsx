@@ -1,160 +1,276 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Pencil, Trash2, Shield, Search } from 'lucide-react';
-import init from "../../../init";
-import { useUser } from '../../../context/UserContext';
-import axios from 'axios';
+import { Search, Filter, Download, RefreshCcw, Loader2, UserPlus, Users, Trash2, Edit, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useNotification } from '../../../context/NotificationContext';
+import apiClient from '../../../api/ApiClient';
+import AddUserModal from './AddUserModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
+import UserFormModal from './UserFormModal';
 
 const UserManagement = () => {
-  const { appUser, token } = useUser();
+  const { showNotification } = useNotification();
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // Filter & Pagination State
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const pageSize = 15;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  // Initial Fetch
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(undefined);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // --- Search Debouncer ---
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
+  // --- Fetch Users ---
   const fetchUsers = async () => {
-
-    const res = await axios.get(`/${init.appName}/api/users/all`, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-    })
-    const data = await res.data;
-    setUsers(data);
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const userData = Object.fromEntries(formData);
-
-    const method = editingUser ? 'PUT' : 'POST';
-    const url = editingUser ? `/api/users/${editingUser.id}` : '/api/users';
-
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-
-    setIsModalOpen(false);
-    setEditingUser(null);
-    fetchUsers();
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      await fetch(`/api/users/${id}`, { method: 'DELETE' });
-      fetchUsers();
+    setLoading(true);
+    try {
+      const params = {
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize,
+        ...(debouncedSearch && { search: debouncedSearch }),
+        ...(selectedRole && { role: selectedRole })
+      };
+      const response = await apiClient.get('/admin/users/', { params });
+      setUsers(response.data);
+      setTotalUsers(parseInt(response.headers['x-total-count'] || 0));
+    } catch (err) {
+      showNotification("Failed to load user directory.", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchUsers();
+  }, [currentPage, debouncedSearch, selectedRole]);
+
+  // --- Reset All ---
+  const handleReset = () => {
+    setSearchTerm("");
+    setSelectedRole("");
+    setCurrentPage(1);
+    showNotification("User filters reset.", "info");
+  };
+
+  // --- CSV Export ---
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const response = await apiClient.get('/admin/users/export', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `EWU_User_Directory_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      showNotification("User directory exported.", "success");
+    } catch (err) {
+      showNotification("Export failed.", "error");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // DELETE HANDLER
+  const handleDelete = async (id) => {
+    setActionLoading(true);
+    try {
+      await apiClient.delete(`/admin/users/${id}`);
+      showNotification("User removed from system.", "success");
+      fetchUsers(); // Refresh table
+      setIsDeleteOpen(false);
+    } catch (err) {
+      showNotification("Failed to delete user.", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleEditClick = (user) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleAddNewClick = () => {
+    setSelectedUser(null);
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (user) => { setSelectedUser(user); setIsEditOpen(true); };
+  const openDelete = (user) => { setSelectedUser(user); setIsDeleteOpen(true); };
+
   return (
-    <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="p-8 space-y-6">
+      <header className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
-          <p className="text-sm text-gray-500">Manage Student, Faculty, Staff, and Employer identities.</p>
+          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+            <Users className="text-[#A10022]" /> User Directory
+          </h1>
+          <p className="text-gray-500 text-sm">Manage student, faculty, and employer accounts.</p>
         </div>
+        <button onClick={handleAddNewClick} className="...">Add New User</button>
+      </header>
+
+      {/* Toolbar */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="relative flex-1 md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#A10022]/20"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <select
+            value={selectedRole}
+            onChange={(e) => { setSelectedRole(e.target.value); setCurrentPage(1); }}
+            className="p-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 outline-none"
+          >
+            <option value="">All Roles</option>
+            <option value="STUDENT">Student</option>
+            <option value="EMPLOYER">Employer</option>
+            <option value="STAFF">Staff</option>
+            <option value="FACULTY">Faculty</option>
+          </select>
+
+          {(searchTerm || selectedRole) && (
+            <button onClick={handleReset} className="text-[#A10022] font-bold text-sm flex items-center gap-1 hover:underline">
+              <RefreshCcw size={14} /> Reset
+            </button>
+          )}
+        </div>
+
         <button
-          onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
-          className="bg-[#A10022] hover:bg-red-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          onClick={handleExport}
+          disabled={exporting}
+          className="flex items-center gap-2 px-6 py-2.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 text-sm font-bold text-gray-700 transition-all disabled:opacity-50"
         >
-          <UserPlus size={18} /> Add User
+          {exporting ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+          Export CSV
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative mb-6 max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-        <input
-          type="text"
-          placeholder="Search by name, email, or Banner ID..."
-          className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {/* Users Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b text-sm font-semibold text-gray-600">
-              <th className="px-4 py-3">Name / Email</th>
-              <th className="px-4 py-3">Banner ID</th>
-              <th className="px-4 py-3">Role</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+      {/* Table Area */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-gray-50 border-b font-bold text-gray-600 uppercase tracking-wider text-[11px]">
+            <tr>
+              <th className="px-6 py-4">User Details</th>
+              <th className="px-6 py-4">SSO</th>
+              <th className="px-6 py-4">Role</th>
+              <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
-            {users.filter(u => u.email.includes(searchTerm)).map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-4">
-                  <div className="font-medium text-gray-900">{user.firstName} {user.lastName}</div>
-                  <div className="text-xs text-gray-500">{user.email}</div>
+            {loading ? (
+              <tr><td colSpan="4" className="py-20 text-center text-gray-400 animate-pulse font-medium">Updating directory...</td></tr>
+            ) : users.map(user => (
+              <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-900">{user.firstName} {user.lastName}</span>
+                    <span className="text-gray-500 text-xs">{user.email}</span>
+                  </div>
                 </td>
-                <td className="px-4 py-4 text-sm text-gray-600">{user.bannerId || 'N/A'}</td>
-                <td className="px-4 py-4">
-                  <span className="px-2 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-700 uppercase">
+
+                <td className="px-6 py-4">
+                  <div className="flex gap-2">
+                    {user.oktaId ? (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                        <ShieldCheck size={12} /> SSO Linked
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                        <AlertCircle size={12} /> No SSO
+                      </span>
+                    )}
+
+                    {user.role === 'STUDENT' && !user.bannerId && (
+                      <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                        Missing Banner ID
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 rounded text-[10px] font-black tracking-widest border ${user.role === 'STAFF' ? 'bg-red-50 text-[#A10022] border-red-100' :
+                    user.role === 'EMPLOYER' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                      'bg-gray-50 text-gray-600 border-gray-200'
+                    }`}>
                     {user.role}
                   </span>
                 </td>
-                <td className="px-4 py-4">
-                  <span className={`h-2 w-2 inline-block rounded-full mr-2 ${user.isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span className="text-sm">{user.isActive ? 'Active' : 'Inactive'}</span>
+                <td className="px-6 py-4">
+                  <span className="flex items-center gap-1.5 text-xs text-green-600 font-bold">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full" /> Active
+                  </span>
                 </td>
-                <td className="px-4 py-4 text-right">
-                  <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg mr-2">
-                    <Pencil size={16} />
-                  </button>
-                  <button onClick={() => handleDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                    <Trash2 size={16} />
-                  </button>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => handleEditClick(user)} className="p-2 hover:bg-gray-100 rounded-lg">
+                      <Edit size={16} />
+                    </button>
+                    <button onClick={() => openDelete(user)} className="p-2 hover:bg-red-50 rounded-lg text-red-500"><Trash2 size={16} /></button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
 
-      {/* User Form Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
-            <h3 className="text-xl font-bold mb-4">{editingUser ? 'Edit User' : 'Create New User'}</h3>
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <input name="firstName" defaultValue={editingUser?.firstName} placeholder="First Name" required className="p-2.5 border rounded-lg w-full" />
-                <input name="lastName" defaultValue={editingUser?.lastName} placeholder="Last Name" required className="p-2.5 border rounded-lg w-full" />
-              </div>
-              <input name="email" defaultValue={editingUser?.email} type="email" placeholder="Email Address" required className="p-2.5 border rounded-lg w-full" />
-              <div className="grid grid-cols-2 gap-4">
-                <input name="bannerId" defaultValue={editingUser?.bannerId} placeholder="Banner ID" className="p-2.5 border rounded-lg w-full" />
-                <select name="role" defaultValue={editingUser?.role || 'STUDENT'} className="p-2.5 border rounded-lg w-full">
-                  <option value="STUDENT">STUDENT</option>
-                  <option value="FACULTY">FACULTY</option>
-                  <option value="STAFF">STAFF</option>
-                  <option value="EMPLOYER">EMPLOYER</option>
-                </select>
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button type="submit" className="flex-1 bg-[#A10022] text-white font-bold py-2.5 rounded-lg hover:bg-red-800 transition-colors">
-                  Save Changes
-                </button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-100 text-gray-700 font-bold py-2.5 rounded-lg hover:bg-gray-200 transition-colors">
-                  Cancel
-                </button>
-              </div>
-            </form>
+        {/* Pagination Controls */}
+        <div className="p-4 border-t flex justify-between items-center bg-gray-50/50">
+          <p className="text-xs text-gray-500 font-medium">
+            Showing <span className="text-gray-900 font-bold">{(currentPage - 1) * pageSize + 1}</span> to <span className="text-gray-900 font-bold">{Math.min(currentPage * pageSize, totalUsers)}</span> of {totalUsers}
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="px-4 py-2 border rounded-xl text-xs font-bold bg-white disabled:opacity-40"
+            >Previous</button>
+            <button
+              disabled={currentPage * pageSize >= totalUsers}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="px-4 py-2 border rounded-xl text-xs font-bold bg-white disabled:opacity-40"
+            >Next</button>
           </div>
         </div>
-      )}
+      </div>
+
+      <UserFormModal
+        isOpen={isModalOpen}
+        initialData={selectedUser}
+        onClose={() => setIsModalOpen(false)}
+        onUserSaved={fetchUsers} // Refresh the list after any save
+        showNotification={showNotification}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteOpen}
+        user={selectedUser}
+        onConfirm={handleDelete}
+        onClose={() => setIsDeleteOpen(false)}
+        loading={actionLoading}
+      />
     </div>
   );
 };
