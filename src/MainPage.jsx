@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import StudentDashboard from './pages/student/StudentDashboard';
-import EmployerDashboard from './pages/employer/EmployerDashboard';
-import AdminDashboard from './pages/admin/AdminDashboard'; // Staff View
+
 import AppRoutes from './AppRoutes';
 import { useUser } from './context/UserContext';
 

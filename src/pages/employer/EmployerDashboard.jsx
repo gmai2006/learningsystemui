@@ -1,144 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Briefcase, 
-  Users, 
-  CheckCircle, 
-  Clock, 
-  PlusCircle, 
-  Building2, 
-  ChevronRight,
-  ExternalLink
+import React, { useEffect, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Briefcase,
+  Users,
+  Calendar,
+  Settings,
+  PlusCircle,
+  TrendingUp,
+  UserCircle
 } from 'lucide-react';
+import DashboardSidebar from '../../components/DashboardSidebar';
+import apiClient from '../../api/ApiClient';
 
-const EmployerDashboard = ({ user }) => {
-  const [stats, setStats] = useState({ activeJobs: 0, pendingApprovals: 0, totalInterns: 0 });
-  const [pendingRequests, setPendingRequests] = useState([]);
+const EmployerDashboard = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [summary, setSummary] = useState({ 
+    activeJobsCount: 0, 
+    totalApplicantsPending: 0, 
+    companyName: "Loading..." 
+  });
+
+  // Navigation tailored for Recruiters
+  const menuItems = [
+    { id: 'overview', label: 'Recruitment Hub', icon: LayoutDashboard, path: '/employer/overview' },
+    { id: 'my-jobs', label: 'My Postings', icon: Briefcase, path: '/employer/my-jobs' },
+    { id: 'applicants', label: 'Applicant Pool', icon: Users, path: '/employer/applicants' },
+    { id: 'interviews', label: 'Interviews', icon: Calendar, path: '/employer/interviews' },
+  ];
+
+  const currentTitle = menuItems.find(item => location.pathname === item.path)?.label || "Employer Portal";
+
+  const fetchEmployerData = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get('/employer/dashboard/summary');
+      setSummary(response.data);
+    } catch (err) {
+      console.error("Failed to fetch employer stats", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // In a real implementation, these would fetch from the REST APIs generated earlier
-    setStats({ activeJobs: 12, pendingApprovals: 4, totalInterns: 8 });
-    setPendingRequests([
-      { id: 1, student: "Alice Eagle", type: "INTERNSHIP", title: "Software Engineer Intern", date: "2025-12-10" },
-      { id: 2, student: "Bob Swoop", type: "CO_OP", title: "Mechanical Engineering Co-op", date: "2025-12-12" }
-    ]);
+    fetchEmployerData();
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#A10022] to-red-900 rounded-2xl p-8 text-white shadow-lg">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Employer Partner Portal</h1>
-            <p className="mt-2 text-red-100">Managing recruitment and applied learning for <strong>EWU Students</strong>.</p>
-          </div>
-          <Building2 size={64} className="opacity-20 hidden md:block" />
-        </div>
-      </div>
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans">
+      <DashboardSidebar
+        menuItems={menuItems}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: 'Active Job Postings', value: stats.activeJobs, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Pending Approvals', value: stats.pendingApprovals, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Current Interns/Staff', value: stats.totalInterns, icon: Users, color: 'text-green-600', bg: 'bg-green-50' }
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-            <div className={`p-4 ${stat.bg} ${stat.color} rounded-lg`}>
-              <stat.icon size={28} />
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Global Top Nav - EWU Silo Consistent Style */}
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-10 shadow-sm">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight italic">
+              {currentTitle}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-8">
+            {/* Recruitment KPIs in Header */}
+            <div className="flex items-center gap-6 border-r border-gray-100 pr-8">
+              <HeaderStat 
+                label="Active Jobs" 
+                value={summary.activeJobsCount} 
+                icon={<Briefcase size={14} className="text-blue-500" />} 
+              />
+              <HeaderStat 
+                label="Pending Review" 
+                value={summary.totalApplicantsPending} 
+                icon={<TrendingUp size={14} className="text-[#A10022]" />} 
+              />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+
+            {/* Post Job Quick Action */}
+            <button 
+              onClick={() => navigate('/employer/my-jobs/new')}
+              className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#A10022] transition-all shadow-lg shadow-gray-200"
+            >
+              <PlusCircle size={16} /> Post Position
+            </button>
+
+            {/* Profile Section */}
+            <div className="flex items-center gap-3 pl-2">
+              <div className="flex flex-col items-end hidden sm:flex">
+                <span className="text-xs font-black text-gray-900 leading-none mb-1">
+                  {summary.companyName}
+                </span>
+                <span className="text-[10px] font-bold text-[#A10022] uppercase tracking-tighter">
+                  Verified Employer
+                </span>
+              </div>
+              <div className="h-10 w-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
+                <UserCircle size={24} />
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+        </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main: Pending Approval Requests */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-800">Pending Approvals</h2>
-            <button className="text-[#A10022] text-sm font-semibold hover:underline flex items-center gap-1">
-              View All <ChevronRight size={16} />
-            </button>
+        {/* Dynamic Content Area */}
+        <main className="flex-1 overflow-y-auto bg-[#F8FAFC]">
+          <div className="max-w-7xl mx-auto p-8">
+            <Outlet context={[summary]} />
           </div>
-          
-          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-            {pendingRequests.length > 0 ? (
-              <ul className="divide-y divide-gray-100">
-                {pendingRequests.map((req) => (
-                  <li key={req.id} className="p-5 hover:bg-gray-50 transition-colors flex justify-between items-center">
-                    <div className="flex gap-4 items-start">
-                      <div className="p-2 bg-gray-100 rounded text-gray-600"><Clock size={20} /></div>
-                      <div>
-                        <p className="font-bold text-gray-900">{req.student}</p>
-                        <p className="text-sm text-gray-600">{req.title}</p>
-                        <span className="mt-1 inline-block px-2 py-0.5 bg-red-50 text-red-700 text-[10px] font-bold rounded uppercase tracking-wider">
-                          {req.type}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="px-4 py-2 bg-[#A10022] text-white text-sm font-bold rounded-lg hover:bg-red-800 transition-all">
-                        Review Request
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="p-10 text-center text-gray-500">No pending approval requests.</div>
-            )}
-          </div>
-        </div>
-
-        {/* Sidebar: Quick Actions */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-gray-800">Recruitment Hub</h2>
-          <div className="bg-white rounded-xl border p-4 shadow-sm space-y-3">
-            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group">
-              <div className="flex items-center gap-3">
-                <PlusCircle className="text-[#A10022]" size={20} />
-                <span className="font-semibold text-gray-700">Post New Job</span>
-              </div>
-              <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
-            </button>
-            
-            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group">
-              <div className="flex items-center gap-3">
-                <Users className="text-blue-600" size={20} />
-                <span className="font-semibold text-gray-700">Manage Campus Fairs</span>
-              </div>
-              <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
-            </button>
-
-            <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group">
-              <div className="flex items-center gap-3">
-                <Building2 className="text-green-600" size={20} />
-                <span className="font-semibold text-gray-700">Company Profile</span>
-              </div>
-              <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          <div className="p-4 bg-gray-900 rounded-xl text-white">
-            <h4 className="font-bold flex items-center gap-2 mb-2">
-              <ExternalLink size={16} className="text-red-400" />
-              Quick Support
-            </h4>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Need help with the "No-Login" approval process or EWU recruiting policies?
-            </p>
-            <button className="mt-4 text-xs font-bold text-red-400 hover:text-red-300">
-              Contact Career Services →
-            </button>
-          </div>
-        </div>
+        </main>
       </div>
     </div>
   );
 };
+
+const HeaderStat = ({ label, value, icon }) => (
+  <div className="flex flex-col items-start">
+    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5 flex items-center gap-1">
+      {icon} {label}
+    </p>
+    <p className="text-lg font-black text-gray-900 leading-none italic">{value}</p>
+  </div>
+);
 
 export default EmployerDashboard;

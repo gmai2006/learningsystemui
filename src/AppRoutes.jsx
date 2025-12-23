@@ -6,6 +6,17 @@ import UserManagement from './pages/admin/user/UserManagement';
 import StaffJobOversight from './pages/admin/staff/StaffJobOversight';
 import SystemSettings from './pages/admin/settting/SystemSettings';
 import AppliedLearningDashboard from './pages/admin/learning/AppliedLearningDashboard';
+import StudentDashboard from './pages/student/StudentDashboard';
+import StudentOverview from './pages/student/StudentOverview';
+import StudentJobBoard from './pages/student/job/StudentJobBoard';
+import StudentApplications from './pages/student/application/StudentApplications';
+import StudentLearning from './pages/student/learning/StudentLearning';
+import StudentProfile from './pages/student/career/StudentProfile';
+import EmployerDashboard from './pages/employer/EmployerDashboard';
+import EmployerOverview from './pages/employer/EmployerOverview';
+import EmployerJobsList from './pages/employer/job/EmployerJobsList';
+import JobPostingForm from './pages/employer/job/JobPostingForm';
+import EmployerJobDetail from './pages/employer/job/EmployerJobDetail';
 
 // ... other imports
 
@@ -31,22 +42,28 @@ const AppRoutes = ({ appUser, token }) => {
       )}
 
       {/* 3. Student Routes */}
-      {/* {appUser.role === 'STUDENT' && (
+      {appUser.role === 'STUDENT' && (
         <Route path="/student" element={<StudentDashboard user={appUser} token={token} />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<StudentJobSearch />} />
-          <Route path="portfolio" element={<CareerPortfolio />} />
+          <Route index element={<Navigate to="overview" replace />} />
+          <Route path="overview" element={<StudentOverview user={appUser} token={token} />} />
+          <Route path="jobs" element={<StudentJobBoard user={appUser} token={token}/>} />
+          <Route path="applications" element={<StudentApplications user={appUser} token={token}/>} />
+          <Route path="learning" element={<StudentLearning user={appUser} token={token}/>} />
+          <Route path="profile" element={<StudentProfile user={appUser} token={token}/>} />
         </Route>
-      )} */}
+      )}
 
       {/* 4. Employer Routes */}
-      {/* {appUser.role === 'EMPLOYER' && (
+      {appUser.role === 'EMPLOYER' && (
         <Route path="/employer" element={<EmployerDashboard user={appUser} token={token} />}>
-          <Route index element={<Navigate to="portal" replace />} />
-          <Route path="portal" element={<EmployerPortalMain />} />
-          <Route path="post-job" element={<JobPostingForm />} />
+          <Route index element={<Navigate to="overview" replace />} />
+          <Route path="overview" element={<EmployerOverview user={appUser} token={token} />} />
+          <Route path="my-jobs" element={<EmployerJobsList user={appUser} token={token} />} />
+          <Route path="my-jobs/new" element={<JobPostingForm />} />
+          <Route path="my-jobs/:jobId" element={<EmployerJobDetail />} />
         </Route>
-      )} */}
+        
+      )}
 
       {/* 5. Fallback for unauthorized access or 404 */}
       <Route path="*" element={<div className="p-10 text-center">Current Path: {location.pathname} 404: Page Not Found or Unauthorized</div>} />
