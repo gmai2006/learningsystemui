@@ -41,7 +41,7 @@ const EmployerJobDetail = () => {
         </button>
         
         <button 
-          onClick={() => navigate(`/employer/my-jobs/edit/${jobId}`)}
+          onClick={() => navigate(`/employer/my-jobs/edit/${job.id}`)}
           className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#A10022] transition-all"
         >
           <Edit3 size={16} /> Edit Posting

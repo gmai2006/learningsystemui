@@ -17,11 +17,14 @@ import EmployerOverview from './pages/employer/EmployerOverview';
 import EmployerJobsList from './pages/employer/job/EmployerJobsList';
 import JobPostingForm from './pages/employer/job/JobPostingForm';
 import EmployerJobDetail from './pages/employer/job/EmployerJobDetail';
+import ApplicantPool from './pages/employer/applicant/ApplicantPool';
+import CandidateReview from './pages/employer/applicant/CandidateReview';
+import EditEmployerJob from './pages/employer/job/EditEmployerJob';
+import EmployerInterviews from './pages/employer/interview/InterviewManagement';
 
-// ... other imports
 
 const AppRoutes = ({ appUser, token }) => {
-    const location = useLocation();
+  const location = useLocation();
   if (!appUser) return <Navigate to="/login" />;
 
   return (
@@ -46,10 +49,10 @@ const AppRoutes = ({ appUser, token }) => {
         <Route path="/student" element={<StudentDashboard user={appUser} token={token} />}>
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<StudentOverview user={appUser} token={token} />} />
-          <Route path="jobs" element={<StudentJobBoard user={appUser} token={token}/>} />
-          <Route path="applications" element={<StudentApplications user={appUser} token={token}/>} />
-          <Route path="learning" element={<StudentLearning user={appUser} token={token}/>} />
-          <Route path="profile" element={<StudentProfile user={appUser} token={token}/>} />
+          <Route path="jobs" element={<StudentJobBoard user={appUser} token={token} />} />
+          <Route path="applications" element={<StudentApplications user={appUser} token={token} />} />
+          <Route path="learning" element={<StudentLearning user={appUser} token={token} />} />
+          <Route path="profile" element={<StudentProfile user={appUser} token={token} />} />
         </Route>
       )}
 
@@ -60,9 +63,13 @@ const AppRoutes = ({ appUser, token }) => {
           <Route path="overview" element={<EmployerOverview user={appUser} token={token} />} />
           <Route path="my-jobs" element={<EmployerJobsList user={appUser} token={token} />} />
           <Route path="my-jobs/new" element={<JobPostingForm />} />
-          <Route path="my-jobs/:jobId" element={<EmployerJobDetail />} />
+          <Route path="my-jobs/edit/:jobId" element={<EditEmployerJob />} />
+          <Route path="my-jobs/view/:jobId" element={<EmployerJobDetail />} />
+          <Route path="applicants/:applicationId" element={<CandidateReview user={appUser} token={token} />} />
+          <Route path="applicants" element={<ApplicantPool user={appUser} token={token} />} />
+          <Route path="interviews/" element={<EmployerInterviews user={appUser} token={token} />} />
         </Route>
-        
+
       )}
 
       {/* 5. Fallback for unauthorized access or 404 */}
