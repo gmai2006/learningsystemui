@@ -1,21 +1,33 @@
-import { ChevronRight, Menu, X, LogOut } from "lucide-react";
+import React, { useState } from "react";
+import { ChevronRight, Menu, X, LogOut, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 
 const DashboardSidebar = ({ menuItems, sidebarOpen, setSidebarOpen }) => {
     const { appUser } = useUser();
     const location = useLocation();
+    
+    // State to track which menu item's submenu is expanded
+    const [expandedMenu, setExpandedMenu] = useState(null);
+
+    const toggleSubmenu = (id) => {
+        if (expandedMenu === id) {
+            setExpandedMenu(null);
+        } else {
+            setExpandedMenu(id);
+            if (!sidebarOpen) setSidebarOpen(true); // Open sidebar if a submenu is clicked while collapsed
+        }
+    };
 
     return (
         <div className={`bg-gray-900 text-white transition-all duration-300 border-r border-gray-800 flex flex-col h-screen sticky top-0 ${
             sidebarOpen ? 'w-64' : 'w-20'
         }`}>
-            {/* Header Section: Dynamic Logo vs Menu Icon */}
+            {/* Header Section */}
             <div className="p-4 border-b border-gray-800 flex items-center h-16 overflow-hidden">
                 {sidebarOpen ? (
                     <>
                         <div className="flex items-center gap-3 flex-1">
-                            {/* Brand "E" Logo */}
                             <div className="bg-[#A10022] w-10 h-10 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
                                 <span className="text-white font-black text-xl italic">E</span>
                             </div>
@@ -24,16 +36,17 @@ const DashboardSidebar = ({ menuItems, sidebarOpen, setSidebarOpen }) => {
                                 <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Admin Portal</span>
                             </div>
                         </div>
-                        {/* Close Trigger */}
                         <button
-                            onClick={() => setSidebarOpen(false)}
+                            onClick={() => {
+                                setSidebarOpen(false);
+                                setExpandedMenu(null); // Close submenus when collapsing sidebar
+                            }}
                             className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors text-gray-400"
                         >
                             <X size={18} />
                         </button>
                     </>
                 ) : (
-                    /* Open Trigger (Menu Icon replaces Logo) */
                     <button
                         onClick={() => setSidebarOpen(true)}
                         className="flex flex-col items-center justify-center w-full group py-2"
@@ -47,34 +60,73 @@ const DashboardSidebar = ({ menuItems, sidebarOpen, setSidebarOpen }) => {
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex-1 p-3 space-y-1 mt-4">
+            <nav className="flex-1 p-3 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
                 {menuItems.map(item => {
-                    const isActive = location.pathname === item.path;
+                    const hasSubmenu = item.children && item.children.length > 0;
+                    const isExpanded = expandedMenu === item.id;
+                    const isActive = location.pathname.startsWith(item.path);
+
                     return (
-                        <Link
-                            key={item.id}
-                            to={item.path}
-                            className={`group flex items-center rounded-xl transition-all duration-200 
-                                ${sidebarOpen ? 'px-4 py-3 gap-3' : 'p-3 justify-center'}
-                                ${isActive 
-                                    ? 'bg-[#A10022] text-white shadow-md' 
-                                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
-                        >
-                            <item.icon size={22} className={isActive ? 'text-white' : 'group-hover:text-white'} />
-                            {sidebarOpen && (
-                                <span className="font-semibold text-sm whitespace-nowrap">{item.label}</span>
+                        <div key={item.id} className="space-y-1">
+                            {/* Main Item */}
+                            {hasSubmenu ? (
+                                <button
+                                    onClick={() => toggleSubmenu(item.id)}
+                                    className={`w-full group flex items-center rounded-xl transition-all duration-200 
+                                        ${sidebarOpen ? 'px-4 py-3 gap-3' : 'p-3 justify-center'}
+                                        ${isActive && !isExpanded ? 'text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
+                                >
+                                    <item.icon size={22} className={isActive ? 'text-red-500' : 'group-hover:text-white'} />
+                                    {sidebarOpen && (
+                                        <>
+                                            <span className="font-semibold text-sm whitespace-nowrap">{item.label}</span>
+                                            {isExpanded ? (
+                                                <ChevronDown size={14} className="ml-auto opacity-60" />
+                                            ) : (
+                                                <ChevronRight size={14} className="ml-auto opacity-60" />
+                                            )}
+                                        </>
+                                    )}
+                                </button>
+                            ) : (
+                                <Link
+                                    to={item.path}
+                                    className={`group flex items-center rounded-xl transition-all duration-200 
+                                        ${sidebarOpen ? 'px-4 py-3 gap-3' : 'p-3 justify-center'}
+                                        ${location.pathname === item.path 
+                                            ? 'bg-[#A10022] text-white shadow-md' 
+                                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
+                                >
+                                    <item.icon size={22} />
+                                    {sidebarOpen && <span className="font-semibold text-sm whitespace-nowrap">{item.label}</span>}
+                                </Link>
                             )}
-                            {sidebarOpen && isActive && (
-                                <ChevronRight size={14} className="ml-auto opacity-60" />
+
+                            {/* Submenu Items */}
+                            {hasSubmenu && isExpanded && sidebarOpen && (
+                                <div className="ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                                    {item.children.map(sub => (
+                                        <Link
+                                            key={sub.id}
+                                            to={sub.path}
+                                            className={`block py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all
+                                                ${location.pathname === sub.path 
+                                                    ? 'text-red-500' 
+                                                    : 'text-gray-500 hover:text-white'}`}
+                                        >
+                                            {sub.label}
+                                        </Link>
+                                    ))}
+                                </div>
                             )}
-                            
+
                             {/* Tooltip for collapsed state */}
                             {!sidebarOpen && (
                                 <div className="fixed left-20 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ml-2 whitespace-nowrap z-50 shadow-xl border border-gray-700">
                                     {item.label}
                                 </div>
                             )}
-                        </Link>
+                        </div>
                     );
                 })}
             </nav>

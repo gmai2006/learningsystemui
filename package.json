@@ -13,6 +13,7 @@
     "@auth0/auth0-react": "^2.8.0",
     "@okta/okta-react": "^6.10.0",
     "@tailwindcss/vite": "^4.1.17",
+    "@yudiel/react-qr-scanner": "^2.5.0",
     "axios": "^1.13.2",
     "export-to-csv": "^1.4.0",
     "lucide-react": "^0.553.0",

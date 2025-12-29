@@ -3,7 +3,7 @@ import apiClient from '../../api/ApiClient';
 import {
     Briefcase, GraduationCap, CheckCircle, Clock,
     ArrowUpRight, Rocket, Target, Sparkles, Send,
-    Calendar
+    Calendar, ShieldCheck, Info
 } from 'lucide-react';
 
 import { useOutletContext } from "react-router-dom";
@@ -15,19 +15,18 @@ const StudentOverview = ({ user, token }) => {
     const [summary] = useOutletContext();
 
     useEffect(() => {
-
         const kpis = [
-            { label: 'Active Applications', value: summary.activeApplications, change: `+${summary.newActiveApplications} new`, icon: Send, color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'Verified Hours', value: summary.totalVerifiedHours, change: '80% of goal', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Pending Verifications', value: summary.pendingVerifications, change: 'In Review', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'Career Readiness', value: `${summary.readinessScore}%`, change: 'Optimal', icon: Sparkles, color: 'text-[#A10022]', bg: 'bg-red-50' },
+            { label: 'Active Applications', value: summary?.activeApplications || 0, change: `+${summary?.newActiveApplications || 0} new`, icon: Send, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Verified Hours', value: summary?.totalVerifiedHours || 0, change: '80% of goal', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Pending Verifications', value: summary?.pendingVerifications || 0, change: 'In Review', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'Career Readiness', value: `${summary?.readinessScore || 0}%`, change: 'Optimal', icon: Sparkles, color: 'text-[#A10022]', bg: 'bg-red-50' },
         ];
         setStats(kpis);
         setMilestones(summary?.recentMilestones || []);
     }, [summary]);
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-8 animate-in fade-in duration-500 pb-10">
             {/* Welcome & Header */}
             <div className="flex justify-between items-end">
                 <div>
@@ -41,7 +40,7 @@ const StudentOverview = ({ user, token }) => {
                 </button>
             </div>
 
-            {/* KPI Grid - Matches CommandCenter Layout */}
+            {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((kpi, idx) => (
                     <div key={idx} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -60,8 +59,32 @@ const StudentOverview = ({ user, token }) => {
                 ))}
             </div>
 
+            {/* --- NEW: FERPA Compliance & Privacy Section --- */}
+            <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-8">
+                <div className="p-4 bg-white rounded-3xl shadow-sm text-emerald-600">
+                    <ShieldCheck size={40} />
+                </div>
+                <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight italic">FERPA & Your Privacy</h3>
+                        <span className="bg-emerald-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Secured</span>
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                        Under the <strong className="text-gray-900">Family Educational Rights and Privacy Act (FERPA)</strong>, Eastern Washington University protects your educational records.
+                        In this portal, your <strong className="text-emerald-700">Privacy Restriction Flag</strong> determines how you appear to employers.
+                        If restricted, you remain invisible in general searches; your data is only shared with an employer when you <strong className="text-emerald-700">explicitly apply</strong> to their posting.
+                    </p>
+                </div>
+                <button
+                    onClick={() => window.open('https://www.ewu.edu/privacy-policy/', '_blank')}
+                    className="whitespace-nowrap flex items-center gap-2 px-6 py-3 bg-white border border-emerald-100 text-emerald-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"
+                >
+                    <Info size={14} /> Privacy Policy
+                </button>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Experience Progress (Visualizing specific types) */}
+                {/* Experience Progress */}
                 <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
                     <div className="flex justify-between items-center mb-8">
                         <h3 className="font-black text-gray-800 uppercase tracking-tight text-sm">Applied Learning Milestones</h3>
@@ -71,7 +94,7 @@ const StudentOverview = ({ user, token }) => {
                     </div>
 
                     <div className="space-y-6">
-                        {milestones.map((m, idx) => (
+                        {milestones.length > 0 ? milestones.map((m, idx) => (
                             <ProgressBar
                                 key={idx}
                                 label={`${m.title} (${m.orgName})`}
@@ -79,11 +102,13 @@ const StudentOverview = ({ user, token }) => {
                                 color={m.progress === 100 ? "bg-emerald-500" : "bg-blue-500"}
                                 status={m.status}
                             />
-                        ))}
+                        )) : (
+                            <p className="text-xs text-gray-400 italic font-medium py-10 text-center">No recent milestones tracked yet.</p>
+                        )}
                     </div>
                 </div>
 
-                {/* Upcoming Deadlines / Action Items */}
+                {/* Priority Timeline */}
                 <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col">
                     <h3 className="font-black text-gray-800 mb-8 flex items-center gap-2 uppercase tracking-tight text-sm">
                         <Calendar size={18} className="text-[#A10022]" /> Priority Timeline

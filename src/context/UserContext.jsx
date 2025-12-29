@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import DeviceFingerprintService from '../utils/fingerprinting';
 export const UserContext = createContext(null);
-
+import { injectUserToken } from '../api/ApiClient';
 import init from "../init";
 import axios from "axios";
 
@@ -47,9 +46,6 @@ export function UserContextProvider({ children }) {
       setAppUser(user);
       
       console.log('User fetched:', user);
-      if (!localStorage.getItem('token')) {
-        localStorage.setItem('token', rawIdToken);
-      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -65,6 +61,17 @@ export function UserContextProvider({ children }) {
     logout({ logoutParams: { returnTo: window.location.origin } });
   }
 
+  const getRawToken = async () => {
+    return (import.meta.env.VITE_DEV) 
+    ? import.meta.env.VITE_DEV
+    : await getRawTokenFromOkta();
+  }
+
+  const getRawTokenFromOkta = async () => {
+    const claims = await getIdTokenClaims();
+    return claims.__raw;
+  }
+  
   useEffect(() => {
     const initialize = async () => {
       if (appUser) return;
@@ -72,17 +79,11 @@ export function UserContextProvider({ children }) {
       if (beingLogin) return;
       beingLogin = !beingLogin;
 
-      if (import.meta.env.VITE_DEV) {
-        console.log(`user context: get user from local dev user ${import.meta.env.VITE_DEV}`);
-        setToken(import.meta.env.VITE_DEV);
-        await getUser(import.meta.env.VITE_DEV);
-      } else if (user && !appUser) {
-        const claims = await getIdTokenClaims();
-        const rawIdToken = claims.__raw;
-        console.log(rawIdToken);
-        setToken(rawIdToken);
-        await getUser(rawIdToken);
-      }
+      const rawIdToken = await getRawToken();
+      setToken(import.meta.env.VITE_DEV);
+      await getUser(rawIdToken);
+      injectUserToken(rawIdToken);
+
       beingLogin = !beingLogin;
     }
     initialize();

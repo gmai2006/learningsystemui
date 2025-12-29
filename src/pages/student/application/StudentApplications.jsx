@@ -8,6 +8,25 @@ import apiClient from '../../../api/ApiClient';
 import { useNotification } from '../../../context/NotificationContext';
 import { formatDate } from '../../../utils/util';
 import ApplicationDetailModal from './ApplicationDetailModal';
+import { useNavigate } from 'react-router-dom';
+
+/* --- Reusable Tooltip Component --- */
+const Tooltip = ({ children, text }) => {
+    const [show, setShow] = useState(false);
+    
+    return (
+        <div className="relative flex items-center" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+            {children}
+            {show && (
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap z-50 shadow-xl animate-in fade-in zoom-in duration-200">
+                    {text}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 const StudentApplications = () => {
     const { showNotification } = useNotification();
@@ -15,11 +34,12 @@ const StudentApplications = () => {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('ALL');
     const [selectedApp, setSelectedApp] = useState(null);
+    const navigate = useNavigate();
+    
 
     const fetchApplications = async () => {
         setLoading(true);
         try {
-            // Calls the endpoint: @GET /api/applications/my-applications
             const res = await apiClient.get('/applications/my-applications');
             setApplications(res.data);
         } catch (err) {
@@ -43,8 +63,8 @@ const StudentApplications = () => {
 
     useEffect(() => { fetchApplications(); }, []);
 
-    const getStatusStyle = (status) => {
-        switch (status) {
+    const getStatusStyle = (applicationStatus) => {
+        switch (applicationStatus) {
             case 'ACCEPTED': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
             case 'REJECTED': return 'bg-red-50 text-red-700 border-red-100';
             case 'REVIEWING': return 'bg-blue-50 text-blue-700 border-blue-100';
@@ -53,7 +73,7 @@ const StudentApplications = () => {
     };
 
     const filteredApps = applications.filter(app =>
-        filter === 'ALL' ? true : app.status === filter
+        filter === 'ALL' ? true : app.applicationStatus === filter
     );
 
     return (
@@ -103,12 +123,12 @@ const StudentApplications = () => {
                                 <div className="flex gap-6 items-start">
                                     <div className="flex gap-2">
                                         {/* The Standard Status Badge */}
-                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${getStatusStyle(app.status)}`}>
-                                            {app.status}
+                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${getStatusStyle(app.applicationStatus)}`}>
+                                            {app.applicationStatus}
                                         </span>
 
                                         {/* NEW: Position Closed Badge */}
-                                        {!app.isJobActive && (
+                                        {!app.isActive && (
                                             <span className="bg-gray-900 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                                                 <XCircle size={12} /> Position Closed
                                             </span>
@@ -126,27 +146,27 @@ const StudentApplications = () => {
                                             <div className="flex items-center gap-4 text-gray-400">
                                                 <span className="text-xs font-bold flex items-center gap-1.5">
                                                     <Calendar size={14} />
-                                                    Applied <span className={formatDate(app.createdAt).includes('ago') ? 'text-[#A10022] font-black' : ''}>
-                                                        {formatDate(app.createdAt)}
+                                                    Applied <span className={formatDate(app.appliedAt).includes('ago') ? 'text-[#A10022] font-black' : ''}>
+                                                        {formatDate(app.appliedAt)}
                                                     </span>
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4 text-gray-400">
                                             <span className="text-xs font-bold flex items-center gap-1.5">
-                                                <Calendar size={14} /> Applied {new Date(app.createdAt[0], app.createdAt[1] - 1, app.createdAt[2]).toLocaleDateString()}
+                                                <Calendar size={14} /> Applied {new Date(app.appliedAt[0], app.appliedAt[1] - 1, app.appliedAt[2]).toLocaleDateString()}
                                             </span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-[#A10022]/40">ID: {app.id.substring(0, 8)}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-[#A10022]/40">ID: {app.applicationId.substring(0, 8)}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Right Side: Status & Actions */}
                                 <div className="flex items-center gap-4 self-end md:self-center">
-                                    <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${getStatusStyle(app.status)}`}>
-                                        {app.status}
+                                    <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${getStatusStyle(app.applicationStatus)}`}>
+                                        {app.applicationStatus}
                                     </div>
-                                    {app.status === 'PENDING' && app.isJobActive && (
+                                    {app.applicationStatus === 'PENDING' && app.isActive && (
                                         <button
                                             onClick={() => handleWithdraw(app.id)}
                                             className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm"
@@ -160,8 +180,13 @@ const StudentApplications = () => {
                                     >
                                         <Info size={20} />
                                     </button>
-                                    <button className="p-3 bg-gray-900 text-white hover:bg-[#A10022] rounded-xl transition-all shadow-lg shadow-gray-200">
-                                        <ExternalLink size={20} />
+                                    <button
+                                        onClick={() => navigate(`/student/jobs/`)} // Added the navigation logic
+                                        className="p-3 bg-gray-900 text-white hover:bg-[#A10022] rounded-xl transition-all shadow-lg shadow-gray-200"
+                                    >
+                                        <Tooltip text="View Original Posting">
+                                            <ExternalLink size={20} />
+                                        </Tooltip>
                                     </button>
                                 </div>
 

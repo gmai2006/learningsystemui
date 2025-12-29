@@ -1,4 +1,4 @@
-import { Briefcase, MapPin, Send, X } from "lucide-react";
+import { Briefcase, MapPin, Send, X, ShieldCheck } from "lucide-react";
 import { formatDate } from "../../../utils/util";
 
 const ApplicationDetailModal = ({ app, onClose }) => {

@@ -21,6 +21,13 @@ import ApplicantPool from './pages/employer/applicant/ApplicantPool';
 import CandidateReview from './pages/employer/applicant/CandidateReview';
 import EditEmployerJob from './pages/employer/job/EditEmployerJob';
 import EmployerInterviews from './pages/employer/interview/InterviewManagement';
+import VolunteerOpportunities from './pages/student/volunteer/VolunteerOpportunities';
+import PrivacySettings from './pages/student/privacy/PrivacySettings';
+import CreateEventModal from './pages/employer/event/CreateEventModal';
+import ManageEvent from './components/ManageEvent';
+import MyVolunteerProjects from './pages/student/volunteer/MyVolunteerProjects';
+import VolunteerOversight from './pages/admin/learning/VolunteerOversight';
+import InternshipOversight from './pages/admin/learning/InternshipOversight';
 
 
 const AppRoutes = ({ appUser, token }) => {
@@ -39,7 +46,18 @@ const AppRoutes = ({ appUser, token }) => {
           <Route path="overview" element={<CommandCenter user={appUser} token={token} />} />
           <Route path="users" element={<UserManagement user={appUser} token={token} />} />
           <Route path="jobs" element={<StaffJobOversight user={appUser} token={token} />} />
-          <Route path="learning" element={<AppliedLearningDashboard user={appUser} token={token} />} />
+
+          {/* Applied Learning Submenu Branch */}
+          <Route path="learning">
+            {/* Default view when clicking the parent 'Applied Learning' */}
+            <Route index element={<AppliedLearningDashboard user={appUser} token={token} />} />
+
+            {/* Sub-pages for the submenu items */}
+            <Route path="internships" element={<InternshipOversight user={appUser} token={token} />} />
+            <Route path="volunteer" element={<VolunteerOversight user={appUser} token={token} />} />
+          </Route>
+
+          <Route path="events" element={<ManageEvent user={appUser} token={token} />} />
           <Route path="settings" element={<SystemSettings user={appUser} token={token} />} />
         </Route>
       )}
@@ -50,9 +68,13 @@ const AppRoutes = ({ appUser, token }) => {
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<StudentOverview user={appUser} token={token} />} />
           <Route path="jobs" element={<StudentJobBoard user={appUser} token={token} />} />
+          <Route path="jobs/:jobId" element={<EmployerJobDetail />} />
           <Route path="applications" element={<StudentApplications user={appUser} token={token} />} />
           <Route path="learning" element={<StudentLearning user={appUser} token={token} />} />
           <Route path="profile" element={<StudentProfile user={appUser} token={token} />} />
+          <Route path="volunteering" element={<VolunteerOpportunities />} />
+          <Route path="my-volunteers" element={<MyVolunteerProjects />} />
+          <Route path="privacy" element={<PrivacySettings />} />
         </Route>
       )}
 
@@ -68,6 +90,8 @@ const AppRoutes = ({ appUser, token }) => {
           <Route path="applicants/:applicationId" element={<CandidateReview user={appUser} token={token} />} />
           <Route path="applicants" element={<ApplicantPool user={appUser} token={token} />} />
           <Route path="interviews/" element={<EmployerInterviews user={appUser} token={token} />} />
+          <Route path="events/create" element={<CreateEventModal user={appUser} token={token} />} />
+          <Route path="events/" element={<ManageEvent user={appUser} token={token} />} />
         </Route>
 
       )}

@@ -11,13 +11,18 @@ const apiClient = axios.create({
 // We define a variable to hold the notification function 
 // This will be "injected" by the provider later
 let showNotificationRef;
+let userContextTokenRef;
 
 export const injectNotification = (fn) => {
     showNotificationRef = fn;
 };
 
+export const injectUserToken = (token) => {
+  userContextTokenRef = token;
+};
+
 apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
+    const token = userContextTokenRef;
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
@@ -25,23 +30,15 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        const status = error.response?.status;
-        const message = error.response?.data || error.message;
+        const errorData = error.response?.data;
+        
+        // Always extract the message from our ErrorDTO structure
+        const message = errorData?.error || "A system error occurred";
+        const detail = errorData?.detail ? `: ${errorData.detail}` : "";
 
-        if (showNotificationRef) {
-            if (status === 401) {
-                showNotificationRef("Session expired. Please log in again.", "error");
-                // Optional: Redirect to login
-                // window.location.href = '/login';
-            } else if (status === 403) {
-                showNotificationRef("Access Denied: You do not have permission for this action.", "error");
-            } else if (status >= 500) {
-                showNotificationRef("Server Error: The Command Center is currently unreachable.", "error");
-            } else if (!status) {
-                showNotificationRef("Network Error: Check your connection to the EWU network.", "error");
-            }
-        }
-
+        // Use your existing NotificationContext to show the error
+        console.error(`[API ERROR]: ${message} ${detail}`);
+        
         return Promise.reject(error);
     }
 );

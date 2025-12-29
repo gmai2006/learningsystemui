@@ -1,23 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import {
     Search, MapPin, Calendar, Wallet, Globe, School,
-    ArrowRight, Briefcase, Clock, Sparkles, Loader2
+    ArrowRight, Briefcase, Clock, Sparkles, Loader2,
+    CheckCircle
 } from 'lucide-react';
 import apiClient from '../../../api/ApiClient';
 import { useNotification } from '../../../context/NotificationContext';
+import { useUser } from '../../../context/UserContext';
 import JobDetailSlideover from './JobDetailSlideover';
 
 const StudentJobBoard = () => {
+    const { appUser } = useUser();
     const { showNotification } = useNotification();
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', fundingSource: '', onCampus: '' });
+    const [filters, setFilters] = useState({ search: '', fundingSource: '', onCampus: undefined });
     const [selectedJob, setSelectedJob] = useState(null);
 
     const fetchJobs = async () => {
         setLoading(true);
         try {
             const res = await apiClient.get('/jobs/student-view', { params: filters });
+
             setJobs(res.data);
         } catch (err) {
             showNotification("Failed to retrieve current job openings.", "error");
@@ -96,7 +100,7 @@ const StudentJobBoard = () => {
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {jobs.map(job => (
-                        <div key={job.id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:border-[#A10022]/20 transition-all group flex flex-col justify-between">
+                        <div key={job.jobId} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:border-[#A10022]/20 transition-all group flex flex-col justify-between">
                             <div>
                                 <div className="flex justify-between items-start mb-6">
                                     <div className="flex gap-2">
@@ -151,13 +155,13 @@ const StudentJobBoard = () => {
 
                                 <button
                                     onClick={() => !job.isApplied && setSelectedJob(job)}
-                                    disabled={job.isApplied}
+                                    disabled={job.studentId === appUser.id}
                                     className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all
-          ${job.isApplied
+          ${job.studentId === appUser.id
                                             ? 'bg-emerald-50 text-emerald-600 cursor-default border border-emerald-100'
                                             : 'bg-gray-50 text-gray-900 group-hover:bg-[#A10022] group-hover:text-white'}`}
                                 >
-                                    {job.isApplied ? (
+                                    {job.studentId === appUser.id ? (
                                         <>Application Complete <CheckCircle size={18} /></>
                                     ) : (
                                         <>Review Position <ArrowRight size={18} /></>

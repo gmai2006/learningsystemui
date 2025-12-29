@@ -8,7 +8,8 @@ import {
   PlusCircle,
   TrendingUp,
   UserCircle,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import apiClient from '../../api/ApiClient';
@@ -45,6 +46,7 @@ const EmployerDashboard = () => {
     { id: 'my-jobs', label: 'My Postings', icon: Briefcase, path: '/employer/my-jobs' },
     { id: 'applicants', label: 'Applicant Pool', icon: Users, path: '/employer/applicants' },
     { id: 'interviews', label: 'Interviews', icon: Calendar, path: '/employer/interviews' },
+    { id: 'events', label: 'Events', icon: Calendar, path: '/employer/events' },
   ];
 
   const currentTitle = menuItems.find(item => location.pathname === item.path)?.label || "Employer Portal";
@@ -102,9 +104,9 @@ const EmployerDashboard = () => {
             <Tooltip text="Create a new job listing immediately">
                 <button 
                 onClick={() => navigate('/employer/my-jobs/new')}
-                className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#A10022] transition-all shadow-lg shadow-gray-200"
+                className="flex items-center gap-2 px-6 py-3 border border-gray-200 bg-white text-gray-900 rounded-2xl font-black text-xs hover:border-[#A10022] transition-all uppercase tracking-widest"
                 >
-                <PlusCircle size={16} /> Post Position
+                <Sparkles size={16} /> Post Job
                 </button>
             </Tooltip>
 

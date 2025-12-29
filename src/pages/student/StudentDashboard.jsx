@@ -9,7 +9,9 @@ import {
   Settings,
   Sparkles,
   Target,
-  Trophy
+  Trophy,
+  HandHelping,
+  Heart
 } from 'lucide-react';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import apiClient from '../../api/ApiClient';
@@ -39,6 +41,10 @@ const StudentDashboard = ({user, token}) => {
     { id: 'applications', label: 'Applications', icon: Send, path: '/student/applications' },
     { id: 'learning', label: 'Experience Registry', icon: GraduationCap, path: '/student/learning' },
     { id: 'profile', label: 'Career Profile', icon: UserCircle, path: '/student/profile' },
+    { id: 'volunteering', label: 'Volunteering', icon: Heart, path: '/student/volunteering' },
+    { id: 'my-volunteers', label: 'My Volunteers', icon: Heart, path: '/student/my-volunteers' },
+    { id: 'privacy', label: 'Privacy Profile', icon: Heart, path: '/student/privacy' },
+    
   ];
 
   // Derive the page title dynamically
