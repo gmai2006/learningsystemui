@@ -16,7 +16,7 @@ const StudentOverview = ({ user, token }) => {
 
     useEffect(() => {
         const kpis = [
-            { label: 'Active Applications', value: summary?.activeApplications || 0, change: `+${summary?.newActiveApplications || 0} new`, icon: Send, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Active Applications', value: summary?.totalActiveApplications || 0, change: `+${summary?.newApplicationsLastWeek || 0} new`, icon: Send, color: 'text-blue-600', bg: 'bg-blue-50' },
             { label: 'Verified Hours', value: summary?.totalVerifiedHours || 0, change: '80% of goal', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50' },
             { label: 'Pending Verifications', value: summary?.pendingVerifications || 0, change: 'In Review', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
             { label: 'Career Readiness', value: `${summary?.readinessScore || 0}%`, change: 'Optimal', icon: Sparkles, color: 'text-[#A10022]', bg: 'bg-red-50' },
