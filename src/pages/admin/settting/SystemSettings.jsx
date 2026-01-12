@@ -8,6 +8,7 @@ import { useNotification } from '../../../context/NotificationContext';
 import apiClient from '../../../api/ApiClient';
 import AuditLogTable from './AuditLogPage';
 import AcademicConfig from './AcademicConfig';
+import { useParams } from 'react-router-dom';
 
 /**
  * Formats Jakarta JSON array timestamps [YYYY, MM, DD, HH, mm, ss, ns] 
@@ -20,7 +21,8 @@ const formatTimestamp = (tsArray) => {
 };
 
 const SystemSettings = () => {
-    const [activeTab, setActiveTab] = useState('academic');
+    const { active } = useParams();
+    const [activeTab, setActiveTab] = useState(active);
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(false);
@@ -155,7 +157,7 @@ const SystemSettings = () => {
 
     useEffect(() => {
         fetchConfig();
-    }, []);
+    }, [activeTab]);
 
     // Reset to page 1 if filter changes
     useEffect(() => {
@@ -166,7 +168,7 @@ const SystemSettings = () => {
      * Step 3: Trigger fetch when debounced search or other filters change
      */
     useEffect(() => {
-        if (activeTab === 'logs') {
+        if (activeTab == undefined || activeTab === 'logs') {
             // Reset to page 1 whenever search or filter changes
             setCurrentPage(1); 
             fetchLogs();

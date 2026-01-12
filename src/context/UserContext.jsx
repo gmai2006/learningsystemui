@@ -61,15 +61,15 @@ export function UserContextProvider({ children }) {
     logout({ logoutParams: { returnTo: window.location.origin } });
   }
 
-  const getRawToken = async () => {
-    return (import.meta.env.VITE_DEV) 
-    ? import.meta.env.VITE_DEV
-    : await getRawTokenFromOkta();
-  }
+  // const getRawToken = async () => {
+  //   return (import.meta.env.VITE_DEV) 
+  //   ? import.meta.env.VITE_DEV
+  //   : await getRawTokenFromOkta();
+  // }
 
   const getRawTokenFromOkta = async () => {
     const claims = await getIdTokenClaims();
-    return claims.__raw;
+    return claims?.__raw;
   }
   
   useEffect(() => {
@@ -79,7 +79,8 @@ export function UserContextProvider({ children }) {
       if (beingLogin) return;
       beingLogin = !beingLogin;
 
-      const rawIdToken = await getRawToken();
+      const rawIdToken = (import.meta.env.VITE_DEV) ? import.meta.env.VITE_DEV : await getRawTokenFromOkta();
+      if (!rawIdToken) return;
       setToken(import.meta.env.VITE_DEV);
       await getUser(rawIdToken);
       injectUserToken(rawIdToken);

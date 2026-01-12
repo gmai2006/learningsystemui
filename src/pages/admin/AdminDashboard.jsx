@@ -29,7 +29,7 @@ const AdminDashboard = () => {
       ]
     },
     { id: 'events', label: 'Events', icon: Calendar, path: '/admin/events' },
-    { id: 'settings', label: 'System Settings', icon: Settings, path: '/admin/settings' },
+    { id: 'settings', label: 'System Settings', icon: Settings, path: '/admin/settings/academic' },
   ];
 
   /**

@@ -23,7 +23,7 @@ const VolunteerOversight = () => {
         setLoading(true);
         try {
             const endpoint = activeTab === 'LOGS' 
-                ? '/staff/volunteer/pending-logs' 
+                ? '/admin/dashboard/volunteer/pending-logs' 
                 : '/jobs/volunteer';
             const res = await apiClient.get(endpoint);
             setPendingLogs(res.data);
@@ -101,10 +101,10 @@ const VolunteerOversight = () => {
                                     <td className="px-8 py-6">
                                         <div className="flex flex-col">
                                             <span className="font-black italic text-gray-900 group-hover:text-[#A10022] transition-colors uppercase text-sm">
-                                                {log.studentName}
+                                                {log.fullName}
                                             </span>
                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                                {log.projectTitle}
+                                                {log.experienceTitle}
                                             </span>
                                         </div>
                                     </td>

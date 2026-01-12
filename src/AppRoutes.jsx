@@ -58,7 +58,7 @@ const AppRoutes = ({ appUser, token }) => {
           </Route>
 
           <Route path="events" element={<ManageEvent user={appUser} token={token} />} />
-          <Route path="settings" element={<SystemSettings user={appUser} token={token} />} />
+          <Route path="settings/:active" element={<SystemSettings user={appUser} token={token} />} />
         </Route>
       )}
 
