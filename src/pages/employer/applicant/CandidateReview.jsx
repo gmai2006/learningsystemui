@@ -180,7 +180,7 @@ const CandidateReview = () => {
               />
               <WorkflowButton
                 active={data.status === 'OFFER_EXTENDED'}
-                onClick={() => handleStatusChange('OFFER_EXTENDED')}
+                onClick={() => handleStatusChange('EMPLOYER_APPROVED')}
                 icon={<Send size={18} />}
                 label="Extend Offer"
                 color="hover:bg-emerald-600"

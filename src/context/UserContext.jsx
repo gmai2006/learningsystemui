@@ -84,7 +84,7 @@ export function UserContextProvider({ children }) {
       setToken(import.meta.env.VITE_DEV);
       await getUser(rawIdToken);
       injectUserToken(rawIdToken);
-
+      
       beingLogin = !beingLogin;
     }
     initialize();

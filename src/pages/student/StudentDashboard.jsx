@@ -11,28 +11,30 @@ import {
   Target,
   Trophy,
   HandHelping,
-  Heart
+  Heart,
+  LogOut
 } from 'lucide-react';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import apiClient from '../../api/ApiClient';
+import { useUser } from '../../context/UserContext';
 
 
-const StudentDashboard = ({user, token}) => {
+const StudentDashboard = ({ user, token }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const [summary, setSummary] = useState({ readinessScore: 0, tierName: 'Loading...', tierColor: '#9B9B9B' });
-
+  const { logout } = useUser();
   const [profile, setProfile] = useState({
-      bio: "",
-      major: "",
-      graduationYear: "",
-      gpa: 0.0,
-      linkedinUrl: "",
-      githubUrl: "",
-      portfolioUrl: "",
-      skills: []
-    });
+    bio: "",
+    major: "",
+    graduationYear: "",
+    gpa: 0.0,
+    linkedinUrl: "",
+    githubUrl: "",
+    portfolioUrl: "",
+    skills: []
+  });
 
   // Navigation items tailored for the Student journey
   const menuItems = [
@@ -44,11 +46,23 @@ const StudentDashboard = ({user, token}) => {
     { id: 'volunteering', label: 'Volunteering', icon: Heart, path: '/student/volunteering' },
     { id: 'my-volunteers', label: 'My Volunteers', icon: Heart, path: '/student/my-volunteers' },
     { id: 'privacy', label: 'Privacy Profile', icon: Heart, path: '/student/privacy' },
-    
+
   ];
 
   // Derive the page title dynamically
   const currentTitle = menuItems.find(item => location.pathname === item.path)?.label || "Student Portal";
+
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (err) {
+      console.error("Logout failed", err);
+      localStorage.clear();
+      navigate('/');
+    }
+  };
 
   const fetchStudentData = async () => {
     setLoading(true);
@@ -146,6 +160,16 @@ const StudentDashboard = ({user, token}) => {
               <div className="h-10 w-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
                 <UserCircle size={24} />
               </div>
+              <button
+                onClick={handleLogout}
+                className="group flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm hover:border-red-100 hover:bg-red-50 transition-all"
+              >
+                <div className="flex flex-col items-end mr-1">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter group-hover:text-red-400">Exit Session</span>
+                  <span className="text-[11px] font-bold text-gray-900 group-hover:text-[#A10022]">Logout</span>
+                </div>
+                <LogOut size={18} className="text-gray-400 group-hover:text-[#A10022] group-hover:translate-x-0.5 transition-all" />
+              </button>
             </div>
           </div>
         </header>

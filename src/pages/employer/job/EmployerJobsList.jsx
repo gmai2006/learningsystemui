@@ -96,7 +96,7 @@ const EmployerJobsList = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                         {filteredJobs.map((job) => (
-                            <tr key={job.id} className="hover:bg-gray-50/50 transition-colors group">
+                            <tr key={job.jobId} className="hover:bg-gray-50/50 transition-colors group">
                                 <td className="p-6">
                                     <div className="flex items-center gap-4">
                                         <Tooltip text={job.isActive ? "Position is live" : "Position is hidden"}>
@@ -135,16 +135,16 @@ const EmployerJobsList = () => {
                                 <td className="p-6 text-right">
                                     <div className="flex justify-end gap-2">
                                         <Tooltip text="View Details">
-                                            <ActionButton icon={<Eye size={16} />} onClick={() => navigate(`/employer/my-jobs/view/${job.id}`)} />
+                                            <ActionButton icon={<Eye size={16} />} onClick={() => navigate(`/employer/my-jobs/view/${job.jobId}`)} />
                                         </Tooltip>
                                         <Tooltip text="Edit Posting">
-                                            <ActionButton icon={<Edit2 size={16} />} onClick={() => navigate(`/employer/my-jobs/edit/${job.id}`)} />
+                                            <ActionButton icon={<Edit2 size={16} />} onClick={() => navigate(`/employer/my-jobs/edit/${job.jobId}`)} />
                                         </Tooltip>
                                         <Tooltip text={job.isActive ? "Close Posting" : "Re-open Posting"}>
                                             <ActionButton
                                                 icon={<Power size={16} />}
                                                 active={job.isActive}
-                                                onClick={() => toggleJobStatus(job.id, job.isActive)}
+                                                onClick={() => toggleJobStatus(job.jobId, job.isActive)}
                                                 danger
                                             />
                                         </Tooltip>

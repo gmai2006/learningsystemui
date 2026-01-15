@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Save, Briefcase, MapPin, DollarSign,
   FileText, Calendar, Wallet, CheckSquare,
-  ChevronLeft, CheckCircle, Tag, Power
+  ChevronLeft, CheckCircle, Tag, Power,
+  Plus, Trash2, Award // Added Plus and Trash2 for array management
 } from 'lucide-react';
 import apiClient from '../../../api/ApiClient';
 import { useNotification } from '../../../context/NotificationContext';
@@ -16,21 +17,21 @@ const EditEmployerJob = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Form state mapped to the JobPosting Entity structure
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    requirements: "",
+    requirements: [""], // Initialized as an array with one empty string
     category: "General",
     location: "",
     salaryRange: "",
     fundingSource: "State",
     deadline: "",
     isOnCampus: true,
-    isActive: true
+    isActive: true,
+    serviceHours: ""
   });
 
-  const categories = ["Technical", "Administrative", "Creative", "Healthcare", "Education", "General"];
+  const categories = ["Technical", "Administrative", "Creative", "Healthcare", "Education", "General", "Volunteer"];
   const fundingOptions = ["State", "Grant", "Federal Work-Study", "Private", "Departmental"];
 
   useEffect(() => {
@@ -39,7 +40,6 @@ const EditEmployerJob = () => {
         const res = await apiClient.get(`/employer/dashboard/${jobId}/details`);
         const data = res.data;
 
-        // --- Date Array to String Transformation ---
         let cleanDeadline = "";
         if (Array.isArray(data.deadline)) {
           const [year, month, day] = data.deadline;
@@ -49,14 +49,18 @@ const EditEmployerJob = () => {
         setFormData({
           title: data.title || "",
           description: data.description || "",
-          requirements: data.requirements || "",
+          // Ensure requirements is an array; if empty or null, provide a default row
+          requirements: Array.isArray(data.requirements) && data.requirements.length > 0 
+                        ? data.requirements 
+                        : [""],
           category: data.category || "General",
           location: data.location || "",
           salaryRange: data.salaryRange || "",
           fundingSource: data.fundingSource || "State",
           deadline: cleanDeadline,
-          isOnCampus: data.onCampus ?? true, // Entity uses isOnCampus
-          isActive: data.isActive ?? true
+          isOnCampus: data.onCampus ?? true,
+          isActive: data.isActive ?? true,
+          serviceHours: data.serviceHours || ""
         });
       } catch (err) {
         showNotification("Failed to load job details", "error");
@@ -68,11 +72,34 @@ const EditEmployerJob = () => {
     fetchJob();
   }, [jobId, navigate, showNotification]);
 
+  // --- Array Logic for Requirements ---
+  const handleAddRequirement = () => {
+    setFormData({ ...formData, requirements: [...formData.requirements, ""] });
+  };
+
+  const handleRequirementChange = (index, value) => {
+    const newReqs = [...formData.requirements];
+    newReqs[index] = value;
+    setFormData({ ...formData, requirements: newReqs });
+  };
+
+  const handleRemoveRequirement = (index) => {
+    const newReqs = formData.requirements.filter((_, i) => i !== index);
+    // Maintain at least one input field
+    setFormData({ ...formData, requirements: newReqs.length > 0 ? newReqs : [""] });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await apiClient.put(`/employer/dashboard/jobs/${jobId}/update`, formData);
+      // Filter out any empty requirement strings before sending to API
+      const payload = {
+        ...formData,
+        requirements: formData.requirements.filter(req => req.trim() !== "")
+      };
+      
+      await apiClient.put(`/employer/dashboard/jobs/${jobId}/update`, payload);
       showNotification("Posting updated successfully!", "success");
       navigate(`/employer/my-jobs/view/${jobId}`);
     } catch (err) {
@@ -91,7 +118,6 @@ const EditEmployerJob = () => {
   return (
     <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
 
-      {/* Header Navigation */}
       <div className="flex items-center justify-between mb-8">
         <button
           onClick={() => navigate(-1)}
@@ -110,7 +136,6 @@ const EditEmployerJob = () => {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm space-y-10">
 
-          {/* Section 1: Title & Category */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormGroup label="Job Title" icon={<Briefcase size={16} />}>
               <input
@@ -130,28 +155,25 @@ const EditEmployerJob = () => {
                 {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </FormGroup>
-
-            {/* Logic to only show for Volunteer category */}
-            {formData.category === 'Volunteer' && (
-              <div className="animate-in slide-in-from-left-4 duration-300">
-                <FormGroup label="Service Hours Total" icon={<Award size={16} />}>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      className="form-input-eagle pr-16"
-                      placeholder="e.g. 20"
-                      value={formData.serviceHours}
-                      onChange={(e) => setFormData({ ...formData, serviceHours: e.target.value })}
-                    />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400 uppercase">Hours</span>
-                  </div>
-                  <p className="text-[9px] text-gray-400 mt-1 ml-1 font-medium italic">Estimated hours a student will earn upon completion.</p>
-                </FormGroup>
-              </div>
-            )}
           </div>
 
-          {/* Section 2: Location, Campus Toggle, Deadline */}
+          {formData.category === 'Volunteer' && (
+            <div className="animate-in slide-in-from-left-4 duration-300">
+              <FormGroup label="Service Hours Total" icon={<Award size={16} />}>
+                <div className="relative">
+                  <input
+                    type="number"
+                    className="form-input-eagle pr-16"
+                    placeholder="e.g. 20"
+                    value={formData.serviceHours}
+                    onChange={(e) => setFormData({ ...formData, serviceHours: e.target.value })}
+                  />
+                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400 uppercase">Hours</span>
+                </div>
+              </FormGroup>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
             <FormGroup label="Location" icon={<MapPin size={16} />}>
               <input
@@ -191,7 +213,6 @@ const EditEmployerJob = () => {
             </FormGroup>
           </div>
 
-          {/* Section 3: Salary & Funding */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormGroup label="Salary / Pay Rate" icon={<DollarSign size={16} />}>
               <input
@@ -212,7 +233,6 @@ const EditEmployerJob = () => {
             </FormGroup>
           </div>
 
-          {/* Section 4: Descriptions & Visibility */}
           <div className="space-y-8">
             <FormGroup label="Detailed Description" icon={<FileText size={16} />}>
               <textarea
@@ -223,13 +243,37 @@ const EditEmployerJob = () => {
               />
             </FormGroup>
 
+            {/* --- Updated Multi-Value Requirements Section --- */}
             <FormGroup label="Candidate Requirements" icon={<CheckCircle size={16} />}>
-              <textarea
-                className="form-textarea-eagle min-h-[120px]"
-                value={formData.requirements}
-                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                required
-              />
+              <div className="space-y-3">
+                {formData.requirements.map((req, index) => (
+                  <div key={index} className="flex gap-2 group animate-in fade-in slide-in-from-left-1">
+                    <input
+                      className="form-input-eagle flex-1"
+                      placeholder={`Requirement #${index + 1} (e.g. Valid Driver's License)`}
+                      value={req}
+                      onChange={(e) => handleRequirementChange(index, e.target.value)}
+                      required={index === 0}
+                    />
+                    {formData.requirements.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveRequirement(index)}
+                        className="p-4 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleAddRequirement}
+                  className="flex items-center gap-2 px-6 py-3 mt-2 text-[10px] font-black uppercase tracking-widest text-[#A10022] hover:bg-red-50 rounded-2xl transition-all w-fit"
+                >
+                  <Plus size={14} /> Add Another Requirement
+                </button>
+              </div>
             </FormGroup>
 
             <div className="pt-6 border-t border-gray-50 flex items-center justify-between">
@@ -249,7 +293,6 @@ const EditEmployerJob = () => {
           </div>
         </div>
 
-        {/* Action Bar */}
         <div className="flex justify-end gap-4">
           <button
             type="submit"
@@ -264,7 +307,6 @@ const EditEmployerJob = () => {
   );
 };
 
-/* --- Internal UI Wrappers --- */
 const FormGroup = ({ label, icon, children }) => (
   <div className="space-y-3">
     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 ml-1">
@@ -273,9 +315,5 @@ const FormGroup = ({ label, icon, children }) => (
     {children}
   </div>
 );
-
-// Global Styles (to be added to your index.css or Tailwind config)
-// .form-input-eagle { @apply w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#A10022]/10 transition-all; }
-// .form-textarea-eagle { @apply w-full bg-gray-50 border border-gray-100 rounded-[2rem] px-6 py-5 font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#A10022]/10 transition-all; }
 
 export default EditEmployerJob;

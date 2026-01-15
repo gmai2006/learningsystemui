@@ -6,9 +6,21 @@ import { useUser } from "../../context/UserContext";
 const DashboardSidebar = ({ menuItems, sidebarOpen, setSidebarOpen }) => {
     const { appUser } = useUser();
     const location = useLocation();
-    
+    const { logout } = useUser();
+
     // State to track which menu item's submenu is expanded
     const [expandedMenu, setExpandedMenu] = useState(null);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/');
+        } catch (err) {
+            console.error("Logout failed", err);
+            localStorage.clear();
+            navigate('/');
+        }
+    };
 
     const toggleSubmenu = (id) => {
         if (expandedMenu === id) {
@@ -20,9 +32,8 @@ const DashboardSidebar = ({ menuItems, sidebarOpen, setSidebarOpen }) => {
     };
 
     return (
-        <div className={`bg-gray-900 text-white transition-all duration-300 border-r border-gray-800 flex flex-col h-screen sticky top-0 ${
-            sidebarOpen ? 'w-64' : 'w-20'
-        }`}>
+        <div className={`bg-gray-900 text-white transition-all duration-300 border-r border-gray-800 flex flex-col h-screen sticky top-0 ${sidebarOpen ? 'w-64' : 'w-20'
+            }`}>
             {/* Header Section */}
             <div className="p-4 border-b border-gray-800 flex items-center h-16 overflow-hidden">
                 {sidebarOpen ? (
@@ -93,8 +104,8 @@ const DashboardSidebar = ({ menuItems, sidebarOpen, setSidebarOpen }) => {
                                     to={item.path}
                                     className={`group flex items-center rounded-xl transition-all duration-200 
                                         ${sidebarOpen ? 'px-4 py-3 gap-3' : 'p-3 justify-center'}
-                                        ${location.pathname === item.path 
-                                            ? 'bg-[#A10022] text-white shadow-md' 
+                                        ${location.pathname === item.path
+                                            ? 'bg-[#A10022] text-white shadow-md'
                                             : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
                                 >
                                     <item.icon size={22} />
@@ -110,8 +121,8 @@ const DashboardSidebar = ({ menuItems, sidebarOpen, setSidebarOpen }) => {
                                             key={sub.id}
                                             to={sub.path}
                                             className={`block py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all
-                                                ${location.pathname === sub.path 
-                                                    ? 'text-red-500' 
+                                                ${location.pathname === sub.path
+                                                    ? 'text-red-500'
                                                     : 'text-gray-500 hover:text-white'}`}
                                         >
                                             {sub.label}
@@ -149,7 +160,9 @@ const DashboardSidebar = ({ menuItems, sidebarOpen, setSidebarOpen }) => {
                                     {appUser?.role || 'Staff'}
                                 </p>
                             </div>
-                            <button className="text-gray-500 hover:text-red-400">
+                            <button
+                                onClick={handleLogout}
+                                className="text-gray-500 hover:text-red-400">
                                 <LogOut size={16} />
                             </button>
                         </>

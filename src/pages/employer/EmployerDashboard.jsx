@@ -9,10 +9,12 @@ import {
   TrendingUp,
   UserCircle,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import apiClient from '../../api/ApiClient';
+import { useUser } from '../../context/UserContext';
 
 /* --- Reusable Tooltip Component --- */
 const Tooltip = ({ children, text }) => {
@@ -22,8 +24,8 @@ const Tooltip = ({ children, text }) => {
       {children}
       {show && (
         <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap z-[100] shadow-xl animate-in fade-in slide-in-from-top-1 duration-200">
-            {text}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900" />
+          {text}
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900" />
         </div>
       )}
     </div>
@@ -35,10 +37,12 @@ const EmployerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  const [summary, setSummary] = useState({ 
-    activeJobsCount: 0, 
-    totalApplicantsPending: 0, 
-    companyName: "Loading..." 
+  const { logout } = useUser();
+
+  const [summary, setSummary] = useState({
+    activeJobsCount: 0,
+    totalApplicantsPending: 0,
+    companyName: "Loading..."
   });
 
   const menuItems = [
@@ -50,6 +54,17 @@ const EmployerDashboard = () => {
   ];
 
   const currentTitle = menuItems.find(item => location.pathname === item.path)?.label || "Employer Portal";
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (err) {
+      console.error("Logout failed", err);
+      localStorage.clear();
+      navigate('/');
+    }
+  };
 
   const fetchEmployerData = async () => {
     setLoading(true);
@@ -86,28 +101,28 @@ const EmployerDashboard = () => {
           <div className="flex items-center gap-8">
             {/* Header KPIs with Tooltips */}
             <div className="flex items-center gap-6 border-r border-gray-100 pr-8">
-              <HeaderStat 
-                label="Active Jobs" 
-                value={summary.activeJobsCount} 
-                icon={<Briefcase size={14} className="text-blue-500" />} 
+              <HeaderStat
+                label="Active Jobs"
+                value={summary.activeJobsCount}
+                icon={<Briefcase size={14} className="text-blue-500" />}
                 tooltip="Live postings currently seen by students"
               />
-              <HeaderStat 
-                label="Pending Review" 
-                value={summary.totalApplicantsPending} 
-                icon={<TrendingUp size={14} className="text-[#A10022]" />} 
+              <HeaderStat
+                label="Pending Review"
+                value={summary.totalApplicantsPending}
+                icon={<TrendingUp size={14} className="text-[#A10022]" />}
                 tooltip="New applicants requiring attention"
               />
             </div>
 
             {/* Post Job Quick Action with Tooltip */}
             <Tooltip text="Create a new job listing immediately">
-                <button 
+              <button
                 onClick={() => navigate('/employer/my-jobs/new')}
                 className="flex items-center gap-2 px-6 py-3 border border-gray-200 bg-white text-gray-900 rounded-2xl font-black text-xs hover:border-[#A10022] transition-all uppercase tracking-widest"
-                >
+              >
                 <Sparkles size={16} /> Post Job
-                </button>
+              </button>
             </Tooltip>
 
             {/* Profile Section with Tooltips */}
@@ -117,16 +132,27 @@ const EmployerDashboard = () => {
                   {summary.companyName}
                 </span>
                 <Tooltip text="Your account has been vetted by Career Services">
-                    <span className="text-[10px] font-bold text-[#A10022] uppercase tracking-tighter flex items-center gap-1 cursor-help">
+                  <span className="text-[10px] font-bold text-[#A10022] uppercase tracking-tighter flex items-center gap-1 cursor-help">
                     <ShieldCheck size={10} /> Verified Employer
-                    </span>
+                  </span>
                 </Tooltip>
               </div>
               <Tooltip text="Account Settings & Profile">
                 <div className="h-10 w-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#A10022] hover:bg-red-50 transition-all cursor-pointer">
-                    <UserCircle size={24} />
+                  <UserCircle size={24} />
                 </div>
               </Tooltip>
+
+              <button
+                onClick={handleLogout}
+                className="group flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm hover:border-red-100 hover:bg-red-50 transition-all"
+              >
+                <div className="flex flex-col items-end mr-1">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter group-hover:text-red-400">Exit Session</span>
+                  <span className="text-[11px] font-bold text-gray-900 group-hover:text-[#A10022]">Logout</span>
+                </div>
+                <LogOut size={18} className="text-gray-400 group-hover:text-[#A10022] group-hover:translate-x-0.5 transition-all" />
+              </button>
             </div>
           </div>
         </header>
@@ -144,10 +170,10 @@ const EmployerDashboard = () => {
 const HeaderStat = ({ label, value, icon, tooltip }) => (
   <Tooltip text={tooltip}>
     <div className="flex flex-col items-start cursor-help">
-        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5 flex items-center gap-1">
+      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5 flex items-center gap-1">
         {icon} {label}
-        </p>
-        <p className="text-lg font-black text-gray-900 leading-none italic">{value}</p>
+      </p>
+      <p className="text-lg font-black text-gray-900 leading-none italic">{value}</p>
     </div>
   </Tooltip>
 );

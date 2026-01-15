@@ -29,9 +29,13 @@ import MyVolunteerProjects from './pages/student/volunteer/MyVolunteerProjects';
 import VolunteerOversight from './pages/admin/learning/VolunteerOversight';
 import InternshipOversight from './pages/admin/learning/InternshipOversight';
 
+// --- NEW: Import the NotFound Component ---
+import NotFound from './pages/NotFound'; 
 
 const AppRoutes = ({ appUser, token }) => {
   const location = useLocation();
+  
+  // Guard clause for authentication
   if (!appUser) return <Navigate to="/login" />;
 
   return (
@@ -47,12 +51,8 @@ const AppRoutes = ({ appUser, token }) => {
           <Route path="users" element={<UserManagement user={appUser} token={token} />} />
           <Route path="jobs" element={<StaffJobOversight user={appUser} token={token} />} />
 
-          {/* Applied Learning Submenu Branch */}
           <Route path="learning">
-            {/* Default view when clicking the parent 'Applied Learning' */}
             <Route index element={<AppliedLearningDashboard user={appUser} token={token} />} />
-
-            {/* Sub-pages for the submenu items */}
             <Route path="internships" element={<InternshipOversight user={appUser} token={token} />} />
             <Route path="volunteer" element={<VolunteerOversight user={appUser} token={token} />} />
           </Route>
@@ -93,11 +93,10 @@ const AppRoutes = ({ appUser, token }) => {
           <Route path="events/create" element={<CreateEventModal user={appUser} token={token} />} />
           <Route path="events/" element={<ManageEvent user={appUser} token={token} />} />
         </Route>
-
       )}
 
-      {/* 5. Fallback for unauthorized access or 404 */}
-      <Route path="*" element={<div className="p-10 text-center">Current Path: {location.pathname} 404: Page Not Found or Unauthorized</div>} />
+      {/* 5. Final Fallback for 404 - Replaced placeholder with NotFound component */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
@@ -111,7 +110,7 @@ const RoleBasedRedirect = ({ role }) => {
     case 'EMPLOYER': return <Navigate to="/employer" replace />;
     case 'STAFF':
     case 'FACULTY': return <Navigate to="/admin" replace />;
-    default: return <Navigate to="/login" replace />;
+    default: return <Navigate to="/" replace />; // Safer fallback
   }
 };
 

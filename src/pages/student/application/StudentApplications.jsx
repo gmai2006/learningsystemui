@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Send, Clock, CheckCircle, XCircle, Search,
     ExternalLink, Calendar, Briefcase, Filter, Info,
-    MapPin
+    MapPin, Tag, Wallet // Added Tag and Wallet icons
 } from 'lucide-react';
 import apiClient from '../../../api/ApiClient';
 import { useNotification } from '../../../context/NotificationContext';
@@ -13,7 +13,6 @@ import { useNavigate } from 'react-router-dom';
 /* --- Reusable Tooltip Component --- */
 const Tooltip = ({ children, text }) => {
     const [show, setShow] = useState(false);
-    
     return (
         <div className="relative flex items-center" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
             {children}
@@ -27,7 +26,6 @@ const Tooltip = ({ children, text }) => {
     );
 };
 
-
 const StudentApplications = () => {
     const { showNotification } = useNotification();
     const [applications, setApplications] = useState([]);
@@ -35,7 +33,6 @@ const StudentApplications = () => {
     const [filter, setFilter] = useState('ALL');
     const [selectedApp, setSelectedApp] = useState(null);
     const navigate = useNavigate();
-    
 
     const fetchApplications = async () => {
         setLoading(true);
@@ -50,12 +47,11 @@ const StudentApplications = () => {
     };
 
     const handleWithdraw = async (appId) => {
-        if (!window.confirm("Are you sure you want to withdraw this application? This action cannot be undone.")) return;
-
+        if (!window.confirm("Are you sure you want to withdraw this application?")) return;
         try {
             await apiClient.delete(`/applications/${appId}/withdraw`);
             showNotification("Application withdrawn.", "info");
-            fetchApplications(); // Refresh the list
+            fetchApplications();
         } catch (err) {
             showNotification("Could not withdraw application.", "error");
         }
@@ -63,8 +59,8 @@ const StudentApplications = () => {
 
     useEffect(() => { fetchApplications(); }, []);
 
-    const getStatusStyle = (applicationStatus) => {
-        switch (applicationStatus) {
+    const getStatusStyle = (status) => {
+        switch (status) {
             case 'ACCEPTED': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
             case 'REJECTED': return 'bg-red-50 text-red-700 border-red-100';
             case 'REVIEWING': return 'bg-blue-50 text-blue-700 border-blue-100';
@@ -78,13 +74,12 @@ const StudentApplications = () => {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Header Section */}
             <header className="flex justify-between items-end">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">
                         My <span className="text-[#A10022]">Applications</span>
                     </h1>
-                    <p className="text-gray-500 font-medium italic">Track your journey across {applications.length} submitted roles.</p>
+                    <p className="text-gray-500 font-medium italic">Tracking {applications.length} active and historical submissions.</p>
                 </div>
 
                 <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
@@ -92,8 +87,7 @@ const StudentApplications = () => {
                         <button
                             key={s}
                             onClick={() => setFilter(s)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${filter === s ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'
-                                }`}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${filter === s ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             {s}
                         </button>
@@ -101,117 +95,112 @@ const StudentApplications = () => {
                 </div>
             </header>
 
-            {/* Main Content Grid */}
             <div className="grid grid-cols-1 gap-4">
                 {loading ? (
                     <div className="bg-white p-20 rounded-[2.5rem] border border-dashed border-gray-200 text-center">
                         <Clock className="mx-auto text-gray-200 animate-pulse mb-4" size={48} />
-                        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Synchronizing Status...</p>
+                        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Syncing status...</p>
                     </div>
                 ) : filteredApps.length === 0 ? (
                     <div className="bg-white p-20 rounded-[2.5rem] border border-gray-100 text-center space-y-4">
                         <Send className="mx-auto text-gray-200" size={64} />
                         <h3 className="text-xl font-black text-gray-900">No Applications Found</h3>
-                        <p className="text-gray-500 max-w-xs mx-auto text-sm italic">You haven't submitted any applications yet. Head over to the Job Board to find your next adventure.</p>
+                        <button onClick={() => navigate('/student/jobs')} className="text-xs font-black text-[#A10022] uppercase tracking-widest hover:underline">Find a position</button>
                     </div>
                 ) : (
                     filteredApps.map((app) => (
-                        <div key={app.id} className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div key={app.applicationId} className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
 
-                                {/* Left Side: Job Info */}
-                                <div className="flex gap-6 items-start">
-                                    <div className="flex gap-2">
-                                        {/* The Standard Status Badge */}
-                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${getStatusStyle(app.applicationStatus)}`}>
+                                {/* Left Side: Job & Application Meta */}
+                                <div className="space-y-4 flex-1">
+                                    <div className="flex flex-wrap gap-2">
+                                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(app.applicationStatus)}`}>
                                             {app.applicationStatus}
                                         </span>
+                                        
+                                        {/* --- NEW: Category Badge --- */}
+                                        <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase flex items-center gap-1.5">
+                                            <Tag size={10} /> {app.category || 'General'}
+                                        </span>
 
-                                        {/* NEW: Position Closed Badge */}
+                                        {/* --- NEW: Funding Source Badge --- */}
+                                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase flex items-center gap-1.5 ${app.fundingSource === 'WORK_STUDY' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+                                            <Wallet size={10} /> {app.fundingSource?.replace('_', ' ')}
+                                        </span>
+
                                         {!app.isActive && (
-                                            <span className="bg-gray-900 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                                                <XCircle size={12} /> Position Closed
+                                            <span className="bg-gray-900 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase flex items-center gap-1.5">
+                                                <XCircle size={10} /> Position Closed
                                             </span>
                                         )}
                                     </div>
 
-                                    <div className="space-y-1">
-                                        <h3 className="text-xl font-black text-gray-900 leading-none group-hover:text-[#A10022] transition-colors italic">
-                                            {app.jobTitle} {/* Now displays the real title from the DB */}
+                                    <div>
+                                        <h3 className="text-2xl font-black text-gray-900 leading-none group-hover:text-[#A10022] transition-colors italic uppercase">
+                                            {app.jobTitle}
                                         </h3>
-                                        <div className="flex items-center gap-4 text-gray-400">
-                                            <span className="text-xs font-bold flex items-center gap-1.5">
-                                                <MapPin size={14} /> {app.location} {/* Display real location */}
-                                            </span>
-                                            <div className="flex items-center gap-4 text-gray-400">
-                                                <span className="text-xs font-bold flex items-center gap-1.5">
-                                                    <Calendar size={14} />
-                                                    Applied <span className={formatDate(app.appliedAt).includes('ago') ? 'text-[#A10022] font-black' : ''}>
-                                                        {formatDate(app.appliedAt)}
-                                                    </span>
-                                                </span>
+                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                                                <MapPin size={14} className="text-gray-300" /> {app.location}
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-gray-400">
-                                            <span className="text-xs font-bold flex items-center gap-1.5">
-                                                <Calendar size={14} /> Applied {new Date(app.appliedAt[0], app.appliedAt[1] - 1, app.appliedAt[2]).toLocaleDateString()}
-                                            </span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-[#A10022]/40">ID: {app.applicationId.substring(0, 8)}</span>
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                                                <Calendar size={14} className="text-gray-300" />
+                                                <span className="uppercase text-[10px] tracking-tighter">Applied</span> 
+                                                <span className="text-gray-600 italic">{formatDate(app.appliedAt)}</span>
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-200">Ref: {app.applicationId.substring(0, 8)}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Right Side: Status & Actions */}
-                                <div className="flex items-center gap-4 self-end md:self-center">
-                                    <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${getStatusStyle(app.applicationStatus)}`}>
-                                        {app.applicationStatus}
-                                    </div>
+                                {/* Right Side: Actions */}
+                                <div className="flex items-center gap-3">
                                     {app.applicationStatus === 'PENDING' && app.isActive && (
                                         <button
-                                            onClick={() => handleWithdraw(app.id)}
-                                            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                            onClick={() => handleWithdraw(app.applicationId)}
+                                            className="px-4 py-3 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
                                         >
-                                            <XCircle size={14} /> Withdraw
+                                            Withdraw
                                         </button>
                                     )}
                                     <button
                                         onClick={() => setSelectedApp(app)}
-                                        className="p-3 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all border border-gray-100"
+                                        className="p-3.5 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl transition-all border border-gray-100"
                                     >
                                         <Info size={20} />
                                     </button>
                                     <button
-                                        onClick={() => navigate(`/student/jobs/`)} // Added the navigation logic
-                                        className="p-3 bg-gray-900 text-white hover:bg-[#A10022] rounded-xl transition-all shadow-lg shadow-gray-200"
+                                        onClick={() => navigate(`/student/jobs/`)}
+                                        className="p-3.5 bg-gray-900 text-white hover:bg-[#A10022] rounded-2xl transition-all shadow-lg shadow-gray-200"
                                     >
-                                        <Tooltip text="View Original Posting">
+                                        <Tooltip text="View Board">
                                             <ExternalLink size={20} />
                                         </Tooltip>
                                     </button>
                                 </div>
-
                             </div>
 
-                            {/* Expansion Area: Submission Notes */}
-                            {app.notes && (
-                                <div className="mt-6 pt-6 border-t border-gray-50">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">My Submission Note</p>
-                                    <div className="bg-gray-50/50 p-4 rounded-2xl text-xs text-gray-600 italic leading-relaxed">
-                                        "{app.notes}"
+                            {/* Optional: Submission Preview */}
+                            {app.studentNotes && (
+                                <div className="mt-6 pt-6 border-t border-gray-50 animate-in slide-in-from-top-2">
+                                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-3 ml-1">Personal Note / Pitch</p>
+                                    <div className="bg-gray-50/50 p-5 rounded-[1.5rem] text-[13px] text-gray-600 italic leading-relaxed border border-gray-50">
+                                        "{app.studentNotes}"
                                     </div>
                                 </div>
-                            )}
-
-                            {selectedApp && (
-                                <ApplicationDetailModal
-                                    app={selectedApp}
-                                    onClose={() => setSelectedApp(null)}
-                                />
                             )}
                         </div>
                     ))
                 )}
             </div>
+
+            {selectedApp && (
+                <ApplicationDetailModal
+                    app={selectedApp}
+                    onClose={() => setSelectedApp(null)}
+                />
+            )}
         </div>
     );
 };

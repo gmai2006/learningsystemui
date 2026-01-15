@@ -1,6 +1,7 @@
 import { 
   Briefcase, MapPin, Send, X, ShieldCheck, 
-  Building2, Globe, ExternalLink, Target, CheckCircle2 
+  Building2, Globe, ExternalLink, Target, CheckCircle2,
+  Tag, Wallet // Added Tag and Wallet icons
 } from "lucide-react";
 import { formatDate } from "../../../utils/util";
 
@@ -18,10 +19,16 @@ const ApplicationDetailModal = ({ app, onClose }) => {
         {/* Header - Branding & Title */}
         <div className="p-8 pb-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-start">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-black text-[#A10022] uppercase tracking-[0.2em]">Application Details</span>
+              
+              {/* --- NEW: Category Badge --- */}
+              <span className="bg-slate-900 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest flex items-center gap-1">
+                <Tag size={10} /> {app.category || 'General'}
+              </span>
+
               {app.isOnCampus && (
-                <span className="bg-[#A10022]/10 text-[#A10022] text-[8px] font-black px-2 py-0.5 rounded-full uppercase">On-Campus</span>
+                <span className="bg-[#A10022]/10 text-[#A10022] text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest">On-Campus</span>
               )}
             </div>
             <h2 className="text-3xl font-black text-gray-900 italic tracking-tight uppercase leading-none mt-1">
@@ -45,7 +52,7 @@ const ApplicationDetailModal = ({ app, onClose }) => {
         {/* Content Scroll Area */}
         <div className="p-8 space-y-8 max-h-[65vh] overflow-y-auto custom-scrollbar">
           
-          {/* Status & Employer Info Grid */}
+          {/* Status, Employer, & Funding Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Status Card */}
             <div className="p-6 bg-gray-900 text-white rounded-[2rem] shadow-xl shadow-gray-200">
@@ -62,20 +69,29 @@ const ApplicationDetailModal = ({ app, onClose }) => {
               </div>
             </div>
 
-            {/* Employer Quick Card */}
+            {/* --- NEW/UPDATED: Position Metadata Card (Funding) --- */}
             <div className="p-6 bg-gray-50 rounded-[2rem] border border-gray-100 flex flex-col justify-between">
-              <div>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Employer Industry</p>
-                <p className="text-xs font-black text-gray-700 uppercase italic">{app.companyIndustry || "General Industry"}</p>
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Funding Source</p>
+                  <div className={`flex items-center gap-1.5 text-xs font-black uppercase italic ${app.fundingSource === 'WORK_STUDY' ? 'text-amber-600' : 'text-blue-600'}`}>
+                    <Wallet size={14} /> {app.fundingSource?.replace('_', ' ') || 'Not Specified'}
+                  </div>
+                </div>
+                <div className="text-right space-y-1">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Industry</p>
+                    <p className="text-[10px] font-black text-gray-700 uppercase italic leading-none">{app.companyIndustry || "General"}</p>
+                </div>
               </div>
+              
               {app.companyWebsite && (
                 <a 
                   href={app.companyWebsite} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="mt-3 flex items-center gap-2 text-[10px] font-black text-[#A10022] uppercase hover:underline"
+                  className="mt-4 flex items-center gap-2 text-[10px] font-black text-[#A10022] uppercase hover:underline"
                 >
-                  <Globe size={12} /> Visit Website <ExternalLink size={10} />
+                  <Globe size={12} /> Partner Website <ExternalLink size={10} />
                 </a>
               )}
             </div>
@@ -84,18 +100,18 @@ const ApplicationDetailModal = ({ app, onClose }) => {
           {/* Job Description */}
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-              <Briefcase size={14} className="text-[#A10022]" /> Job Description
+              <Briefcase size={14} className="text-[#A10022]" /> Official Position Description
             </h3>
             <div className="p-6 bg-gray-50 rounded-3xl text-sm text-gray-600 leading-relaxed italic border border-gray-100">
-              {app.jobDescription}
+              {app.jobDescription || "No detailed description available."}
             </div>
           </div>
 
-          {/* Learning Objectives (if internship) */}
+          {/* Learning Objectives */}
           {app.learningObjectives?.length > 0 && (
             <div className="space-y-4">
                <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                <Target size={14} className="text-[#A10022]" /> Agreed Learning Objectives
+                <Target size={14} className="text-[#A10022]" /> Academic Learning Objectives
               </h3>
               <div className="grid gap-2">
                 {app.learningObjectives.map((obj, i) => (
@@ -111,7 +127,7 @@ const ApplicationDetailModal = ({ app, onClose }) => {
           {/* Student's Notes */}
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-              <Send size={14} className="text-[#A10022]" /> Your Submission Note
+              <Send size={14} className="text-[#A10022]" /> Your Application Submission Note
             </h3>
             <div className="p-6 bg-white rounded-3xl border-2 border-dashed border-gray-100">
               <p className="text-sm text-gray-500 italic leading-relaxed">
@@ -125,7 +141,7 @@ const ApplicationDetailModal = ({ app, onClose }) => {
         <div className="p-8 bg-white border-t border-gray-100 flex justify-between items-center">
           <div className="flex items-center gap-2 text-gray-400">
             <ShieldCheck size={16} />
-            <span className="text-[9px] font-bold uppercase">Verified Application</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Verified Academic Record</span>
           </div>
           <button 
             onClick={onClose}

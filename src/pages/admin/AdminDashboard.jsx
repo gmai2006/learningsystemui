@@ -50,11 +50,11 @@ const AdminDashboard = () => {
   const handleLogout = async () => {
     try {
         await logout();
-        navigate('/login');
+        navigate('/');
     } catch (err) {
         console.error("Logout failed", err);
         localStorage.clear();
-        navigate('/login');
+        navigate('/');
     }
   };
 
