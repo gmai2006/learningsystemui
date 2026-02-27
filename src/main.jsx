@@ -12,6 +12,7 @@ import { Auth0Provider } from '@auth0/auth0-react';
 
 import { UserContextProvider } from './context/UserContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
+import MainPage from './MainPage.jsx';
 
 
 createRoot(document.getElementById('root')).render(
@@ -25,7 +26,7 @@ createRoot(document.getElementById('root')).render(
     >
       <UserContextProvider>
         <NotificationProvider>
-          <App />
+          <MainPage />
         </NotificationProvider>
       </UserContextProvider>
     </Auth0Provider>

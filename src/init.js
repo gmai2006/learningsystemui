@@ -1,7 +1,7 @@
 const init = {
-  'name': 'learningsystem',
-  'appName': 'learningsystem',
-  'domainName': 'learningsystem',
-  'sqlName': 'learningsystem.sql'
+  'name': 'trackingsystem',
+  'appName': 'trackingsystem',
+  'domainName': 'trackingsystem',
+  'sqlName': 'trackingsystem.sql'
 }
 export default init;

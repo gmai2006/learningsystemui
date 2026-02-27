@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-import AppRoutes from './AppRoutes';
+
 import { useUser } from './context/UserContext';
+import App from './App';
 
 const MainPage = () => {
     const { appUser, token } = useUser();
@@ -11,9 +12,7 @@ const MainPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {<AppRoutes appUser={appUser} token={token} />}
-        </div>
+        <App />
     );
 };
 

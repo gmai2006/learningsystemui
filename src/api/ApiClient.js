@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: '/learningsystem/api/',
+  baseURL: '/trackingsystem/api/',
   headers: {
     'Content-Type': 'application/json',
   },

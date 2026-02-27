@@ -61,12 +61,6 @@ export function UserContextProvider({ children }) {
     logout({ logoutParams: { returnTo: window.location.origin } });
   }
 
-  // const getRawToken = async () => {
-  //   return (import.meta.env.VITE_DEV) 
-  //   ? import.meta.env.VITE_DEV
-  //   : await getRawTokenFromOkta();
-  // }
-
   const getRawTokenFromOkta = async () => {
     const claims = await getIdTokenClaims();
     return claims?.__raw;
